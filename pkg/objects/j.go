@@ -20,3 +20,14 @@ type JobProgress struct {
 	Total    float64 `json:"total"`
 	Units    string  `json:"units"`
 }
+
+type JobEdges struct {
+	Cursor string `json:"cursor"`
+	Node   Job    `json:"node"`
+}
+
+// JobsConnection ..
+type JobsConnection struct {
+	Edges    []JobEdges `json:"edges"`
+	PageInfo PageInfo   `json:"pageInfo"`
+}

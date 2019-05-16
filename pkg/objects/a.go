@@ -15,13 +15,16 @@ type App struct {
 	VersionsList  PackagesConnection `json:"versionsList"`
 }
 
-// PackagesConnection ..
+// AppEdges ..
+type AppEdges struct {
+	Cursor string `json:"cursor"`
+	Node   App    `json:"node"`
+}
+
+// AppsConnection ..
 type AppsConnection struct {
-	Edges struct {
-		Cursor string `json:"cursor"`
-		Node   []App  `json:"node"`
-	} `json:"edges"`
-	PageInfo PageInfo `json:"pageInfo"`
+	Edges    []AppEdges `json:"edges"`
+	PageInfo PageInfo   `json:"pageInfo"`
 }
 
 // Authorization ..

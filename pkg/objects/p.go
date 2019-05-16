@@ -9,13 +9,16 @@ type Package struct {
 	UploadedTimeplate int                     `json:"uploadedTimeplate"`
 }
 
+// PackagesEdge ..
+type PackagesEdge struct {
+	Cursor string  `json:"cursor"`
+	Node   Package `json:"node"`
+}
+
 // PackagesConnection ..
 type PackagesConnection struct {
-	Edges struct {
-		Cursor string    `json:"cursor"`
-		Node   []Package `json:"node"`
-	} `json:"edges"`
-	PageInfo PageInfo `json:"pageInfo"`
+	Edges    []PackagesEdge `json:"edges"`
+	PageInfo PageInfo       `json:"pageInfo"`
 }
 
 // PageInfo ..

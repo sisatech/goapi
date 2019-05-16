@@ -116,7 +116,7 @@ func (c *Client) GetDefaultQuery() (*objects.Defaults, error) {
 func (c *Client) GetSingletonID(name string) (string, error) {
 
 	req := graphql.NewRequest(`
-		query($type Singletons!) {
+		query($type: Singletons!) {
 			getSingletonID(type:$type)
 		}
 	`)
