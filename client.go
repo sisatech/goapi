@@ -50,36 +50,6 @@ func (c *Client) Context() context.Context {
 	return c.ctx
 }
 
-func (c *Client) Run(r *graphql.Request, resp interface{}) error {
-	return c.client.Run(c.ctx, r, resp)
-}
-
-// Login with the AuthKey field from Client.cfg
-// func (c *Client) login() error {
-//
-// 	resp, err := c.Post(c.loginURL(), mime.TypeByExtension("json"),
-// 		bytes.NewReader([]byte(fmt.Sprintf("{\"key\": \"%s\"}",
-// 			c.cfg.AuthKey))))
-// 	if err != nil {
-// 		return err
-// 	}
-// 	defer resp.Body.Close()
-//
-// 	if resp.StatusCode != http.StatusOK {
-// 		return fmt.Errorf("unexpected status code %v, expected %v",
-// 			resp.StatusCode, http.StatusOK)
-// 	}
-//
-// 	for _, cookie := range resp.Cookies() {
-// 		if cookie.Name == "vauth" {
-// 			c.cookie = cookie
-// 			return nil
-// 		}
-// 	}
-//
-// 	return fmt.Errorf("response did not contain 'vauth' cookie")
-// }
-
 func (c *Client) Cookie() *http.Cookie {
 	if c.cookie == nil {
 		return nil
@@ -93,11 +63,6 @@ func (c *Client) graphqlURL() string {
 
 func (c *Client) loginURL() string {
 	return fmt.Sprintf("%s/api/login", c.cfg.Address)
-}
-
-// GraphQL ..
-func (c *Client) GraphQL() *graphql.Client {
-	return c.client
 }
 
 // Post wraps http.Post()

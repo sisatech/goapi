@@ -78,7 +78,7 @@ func (c *Client) GermConfigQuery(germ string) (*objects.VorteilConfiguration, er
 
 	response := new(responseHolder)
 
-	err := c.GraphQL().Run(c.Context(), req, &response)
+	err := c.client.Run(c.Context(), req, &response)
 	if err != nil {
 		return nil, err
 	}
