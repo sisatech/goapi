@@ -52,7 +52,7 @@ func (c *Client) Context() context.Context {
 	return c.ctx
 }
 
-func (c *Client) Run(r *graphql.Req, responseHolder interface{}) error {
+func (c *Client) Run(r *graphql.Req, resp interface{}) error {
 	return c.client.Run(c.ctx, req, resp)
 }
 
