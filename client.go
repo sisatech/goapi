@@ -11,8 +11,13 @@ import (
 
 type Scheme string
 
+type Doer interface {
+	Do(*http.Request) (*http.Response, error)
+}
+
 // Client ..
 type Client struct {
+	http   *http.Client
 	cfg    *ClientConfig
 	cookie *http.Cookie
 	client *graphql.Client
@@ -29,8 +34,9 @@ type ClientConfig struct {
 func NewClient(ctx context.Context, cfg *ClientConfig) (*Client, error) {
 
 	c := &Client{
-		cfg: cfg,
-		ctx: context.Background(),
+		cfg:  cfg,
+		ctx:  context.Background(),
+		http: http.DefaultClient,
 	}
 
 	c.client = graphql.NewClient(c.graphqlURL())
@@ -171,4 +177,33 @@ func addCursorToRequest(req *graphql.Request, curs *CursorArgs) {
 	if curs.Last != 0 {
 		req.Var("last", curs.Last)
 	}
+}
+
+// Do ..
+func (c *Client) Do(r *http.Request) (*http.Response, error) {
+	// r.Header.Set(VersionHeaderKey, Version.Release)
+
+	// if c.Forward != "" {
+	// 	c.Logger.Debug(fmt.Sprintf("Forwarding request: %s", c.Forward))
+	// 	r.Header.Set("Vorteil", c.Forward)
+	// }
+	resp, err := c.http.Do(r)
+	if err != nil {
+		return nil, err
+	}
+
+	// v := resp.Header.Get(VersionHeaderKey)
+	// x := strings.SplitN(v, ".", 3)
+
+	// var maj, min uint
+	// maj = uint(ContractMajor)
+	// min = uint(ContractMinor)
+
+	// cont := contracts.Contract{
+	// 	Major: &maj,
+	// 	Minor: &min,
+	// }
+
+	return resp, nil
+
 }
