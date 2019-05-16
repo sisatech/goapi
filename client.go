@@ -6,7 +6,6 @@ import (
 	"io"
 	"net/http"
 
-	graphqlws "code.vorteil.io/vorteil/libs/graphqlws.git"
 	"github.com/machinebox/graphql"
 )
 
@@ -14,11 +13,10 @@ type Scheme string
 
 // Client ..
 type Client struct {
-	cfg                *ClientConfig
-	cookie             *http.Cookie
-	client             *graphql.Client
-	subscriptionClient *graphqlws.Client
-	ctx                context.Context
+	cfg    *ClientConfig
+	cookie *http.Cookie
+	client *graphql.Client
+	ctx    context.Context
 }
 
 // ClientArgs - used to create a new Client
@@ -52,8 +50,8 @@ func (c *Client) Context() context.Context {
 	return c.ctx
 }
 
-func (c *Client) Run(r *graphql.Req, resp interface{}) error {
-	return c.client.Run(c.ctx, req, resp)
+func (c *Client) Run(r *graphql.Request, resp interface{}) error {
+	return c.client.Run(c.ctx, r, resp)
 }
 
 // Login with the AuthKey field from Client.cfg
