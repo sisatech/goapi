@@ -1,64 +1,46 @@
 package goapi
 
 import (
-	"bytes"
 	"context"
 	"fmt"
 	"io"
-	"mime"
 	"net/http"
 
+	graphqlws "code.vorteil.io/vorteil/libs/graphqlws.git"
 	"github.com/machinebox/graphql"
 )
 
 type Scheme string
 
-const (
-	HTTP  = Scheme("http")
-	HTTPS = Scheme("https")
-)
-
 // Client ..
 type Client struct {
-	cfg    *ClientArgs
-	cookie *http.Cookie
-	client *graphql.Client
-	ctx    context.Context
+	cfg                *ClientConfig
+	cookie             *http.Cookie
+	client             *graphql.Client
+	subscriptionClient *graphqlws.Client
+	ctx                context.Context
 }
 
 // ClientArgs - used to create a new Client
-type ClientArgs struct {
-	Host    string
-	Port    int
-	AuthKey string
-	Scheme  Scheme
+type ClientConfig struct {
+	Address string
+	Path    string
 }
 
-// NewTestClient returns a Client according to the provided *ClientArgs
-func NewTestClient(args *ClientArgs) (*Client, error) {
+// NewClient returns a Client according to the provided *ClientArgs
+func NewClient(ctx context.Context, cfg *ClientConfig) (*Client, error) {
 
 	c := &Client{
-		cfg: args,
+		cfg: cfg,
 		ctx: context.Background(),
 	}
 
 	c.client = graphql.NewClient(c.graphqlURL())
-	if c.cfg.AuthKey != "" {
-		// authenticate (get cookie)
-		err := c.Login()
-		if err != nil {
-			return nil, err
-		}
-	}
-
 	return c, nil
 }
 
 func (c *Client) NewRequest(str string) *graphql.Request {
 	req := graphql.NewRequest(str)
-	if c.cfg.AuthKey != "" {
-		req.Header.Set("Cookie", fmt.Sprintf("vauth=%s", c.cfg.AuthKey))
-	}
 	return req
 }
 
@@ -70,31 +52,35 @@ func (c *Client) Context() context.Context {
 	return c.ctx
 }
 
-// Login with the AuthKey field from Client.cfg
-func (c *Client) Login() error {
-
-	resp, err := c.Post(c.loginURL(), mime.TypeByExtension("json"),
-		bytes.NewReader([]byte(fmt.Sprintf("{\"key\": \"%s\"}",
-			c.cfg.AuthKey))))
-	if err != nil {
-		return err
-	}
-	defer resp.Body.Close()
-
-	if resp.StatusCode != http.StatusOK {
-		return fmt.Errorf("unexpected status code %v, expected %v",
-			resp.StatusCode, http.StatusOK)
-	}
-
-	for _, cookie := range resp.Cookies() {
-		if cookie.Name == "vauth" {
-			c.cookie = cookie
-			return nil
-		}
-	}
-
-	return fmt.Errorf("response did not contain 'vauth' cookie")
+func (c *Client) Run(r *graphql.Req, responseHolder interface{}) error {
+	return c.client.Run(c.ctx, req, resp)
 }
+
+// Login with the AuthKey field from Client.cfg
+// func (c *Client) login() error {
+//
+// 	resp, err := c.Post(c.loginURL(), mime.TypeByExtension("json"),
+// 		bytes.NewReader([]byte(fmt.Sprintf("{\"key\": \"%s\"}",
+// 			c.cfg.AuthKey))))
+// 	if err != nil {
+// 		return err
+// 	}
+// 	defer resp.Body.Close()
+//
+// 	if resp.StatusCode != http.StatusOK {
+// 		return fmt.Errorf("unexpected status code %v, expected %v",
+// 			resp.StatusCode, http.StatusOK)
+// 	}
+//
+// 	for _, cookie := range resp.Cookies() {
+// 		if cookie.Name == "vauth" {
+// 			c.cookie = cookie
+// 			return nil
+// 		}
+// 	}
+//
+// 	return fmt.Errorf("response did not contain 'vauth' cookie")
+// }
 
 func (c *Client) Cookie() *http.Cookie {
 	if c.cookie == nil {
@@ -103,16 +89,12 @@ func (c *Client) Cookie() *http.Cookie {
 	return c.cookie
 }
 
-func (c *Client) baseURL() string {
-	return fmt.Sprintf("%s://%s:%v", c.cfg.Scheme, c.cfg.Host, c.cfg.Port)
-}
-
 func (c *Client) graphqlURL() string {
-	return fmt.Sprintf("%s/graphql", c.baseURL())
+	return fmt.Sprintf("%s/graphql", c.cfg.Address)
 }
 
 func (c *Client) loginURL() string {
-	return fmt.Sprintf("%s/api/login", c.baseURL())
+	return fmt.Sprintf("%s/api/login", c.cfg.Address)
 }
 
 // GraphQL ..
