@@ -111,3 +111,26 @@ func (c *Client) GetDefaultQuery() (*objects.Defaults, error) {
 
 	return &resp.GetDefault, nil
 }
+
+// GetSingletonID ..
+func (c *Client) GetSingletonID(name string) (string, error) {
+
+	req := graphql.NewRequest(`
+		query($type Singletons!) {
+			getSingletonID(type:$type)
+		}
+	`)
+	req.Var("type", name)
+
+	type responseContainer struct {
+		GetSingletonID string `json:"getSingletonID"`
+	}
+
+	resp := new(responseContainer)
+	err := c.client.Run(c.ctx, req, &resp)
+	if err != nil {
+		return "", err
+	}
+
+	return resp.GetSingletonID, nil
+}
