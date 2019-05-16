@@ -72,11 +72,11 @@ func (c *Client) GermConfigQuery(germ string) (*objects.VorteilConfiguration, er
 
 	req.Var("germ", germ)
 
-	type responseHolder struct {
+	type responseContainer struct {
 		GermConfig objects.VorteilConfiguration `json:"germConfig"`
 	}
 
-	response := new(responseHolder)
+	response := new(responseContainer)
 
 	err := c.client.Run(c.Context(), req, &response)
 	if err != nil {
