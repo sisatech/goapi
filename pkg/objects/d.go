@@ -6,6 +6,12 @@ type Defaults struct {
 	Platform string `json:"platform"`
 }
 
+// DetailPlatform ..
+type DetailPlatform struct {
+	Debug bool                   `json:"dbug"`
+	More  map[string]interface{} `json:"more"`
+}
+
 // DiskAnalysis ..
 type DiskAnalysis struct {
 	Filesystem DiskFilesystem `json:"fileSystem"`

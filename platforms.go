@@ -57,6 +57,19 @@ type VcenterCloudArgs struct {
 	Cluster    string
 }
 
+type AzureCloudArgs struct {
+	GenericPlatformArgs
+	StorageAccount    string `json:"storageAccount"`
+	StorageAccountKey string `json:"storageAccountKey"`
+	VirtualNetwork    string `json:"vnet"`
+	AuthFilePath      string `json:"authpath"`
+	ResourceGroup     string `json:"resourceGroup"`
+	Container         string `json:"container"`
+	Location          string `json:"location"`
+	SubID             string `json:"subID"`
+	SubNetwork        string `json:"subnet"`
+}
+
 // ListPlatforms gathers a list of platforms currently up on vorteil.
 func (c *Client) ListPlatforms() ([]objects.Platform, error) {
 
@@ -77,6 +90,40 @@ func (c *Client) ListPlatforms() ([]objects.Platform, error) {
 	}
 
 	return listPlatformsWrapper.ListPlatforms, nil
+}
+
+// NewPlatformAzure is a function used to create a new platform on vorteil running on the azure cloud.
+func (c *Client) NewPlatformAzure(args AzureCloudArgs) (*objects.Platform, error) {
+	req := c.NewRequest(`mutation($name: String!, $verbose: Boolean!, $storageAcc: String!, $storageAccKey: String!, $resourceGroup: String!, $authpath: String!, $container: String!, $location: String!, $subid: String!, $subnet: String!, $vnet: String!){
+		addPlatformAzure(name: $name, verbose: $verbose, storageAccount: $storageAcc, storageAccountKey: $storageAccKey, resourceGroup: $resourceGroup, authpath: $authpath, container: $container, location: $location, subID: $subid, subnet: $subnet, vnet: $vnet){
+			name
+			type
+		}
+	}`)
+
+	req.Var("name", args.Name)
+	req.Var("verbose", args.Verbose)
+	req.Var("storageAcc", args.StorageAccount)
+	req.Var("storageAccKey", args.StorageAccountKey)
+	req.Var("resourceGroup", args.ResourceGroup)
+	req.Var("authpath", args.AuthFilePath)
+	req.Var("container", args.Container)
+	req.Var("location", args.Location)
+	req.Var("subid", args.SubID)
+	req.Var("subnet", args.SubNetwork)
+	req.Var("vnet", args.VirtualNetwork)
+
+	type responseContainer struct {
+		AddPlatformAzure objects.Platform `json:"addPlatformAzure"`
+	}
+
+	azureWrapper := new(responseContainer)
+
+	if err := c.client.Run(c.ctx, req, &azureWrapper); err != nil {
+		return nil, err
+	}
+
+	return &azureWrapper.AddPlatformAzure, nil
 }
 
 // NewPlatformVcenter is a function used to create a new platform on Vorteil talking to VCenter.
@@ -266,6 +313,30 @@ func (c *Client) NewPlatformKVM(args GeneralHypervisorArgs) (*objects.Platform, 
 	}
 
 	return &kvmWrapper.AddPlatformKVM, nil
+}
+
+// DetailPlatform takes a platform and describes the details about it.
+func (c *Client) DetailPlatform(platform string) (*objects.DetailPlatform, error) {
+	req := c.NewRequest(`query($name: String!){
+		detailPlatform(name: $name){
+			dbug
+			more
+		}
+	}`)
+
+	req.Var("name", platform)
+
+	type responseContainer struct {
+		DetailPlatform objects.DetailPlatform `json:"detailPlatform"`
+	}
+
+	detailPlatWrapper := new(responseContainer)
+
+	if err := c.client.Run(c.ctx, req, &detailPlatWrapper); err != nil {
+		return nil, err
+	}
+
+	return &detailPlatWrapper.DetailPlatform, nil
 }
 
 // RemovePlatform takes a platform and deletes it from vorteil. Returns an error if unsuccessfull.
