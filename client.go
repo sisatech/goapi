@@ -187,10 +187,10 @@ func (c *Client) Do(r *http.Request) (*http.Response, error) {
 	// 	c.Logger.Debug(fmt.Sprintf("Forwarding request: %s", c.Forward))
 	// 	r.Header.Set("Vorteil", c.Forward)
 	// }
-	resp, err := c.http.Do(r)
-	if err != nil {
-		return nil, err
-	}
+	// resp, err := c.http.Do(r)
+	// if err != nil {
+	// 	return nil, err
+	// }
 
 	// v := resp.Header.Get(VersionHeaderKey)
 	// x := strings.SplitN(v, ".", 3)
@@ -204,6 +204,6 @@ func (c *Client) Do(r *http.Request) (*http.Response, error) {
 	// 	Minor: &min,
 	// }
 
-	return resp, nil
+	return c.http.Do(r)
 
 }

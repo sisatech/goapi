@@ -18,3 +18,22 @@ func (c *Client) ApplyACLRule(id, action, group string) error {
 
 	return nil
 }
+
+// DeleteACLRule removes read,write or exec to the object
+func (c *Client) DeleteACLRule(id, action, group string) error {
+	req := c.NewRequest(`mutation($id: String!, $group: String!, $action: String!){
+		deleteACLRule(id: $id, group: $group, action: $action){
+			id
+		}
+	}`)
+
+	req.Var("id", id)
+	req.Var("group", group)
+	req.Var("action", action)
+
+	if err := c.client.Run(c.ctx, req, nil); err != nil {
+		return err
+	}
+
+	return nil
+}
