@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"net/http"
 
+	"github.com/machinebox/graphql"
 	"github.com/sisatech/goapi/pkg/objects"
 
 	"github.com/sisatech/vcli/pkg/util/file"
@@ -23,6 +24,29 @@ func (c *Client) RemoveRepository(name string) error {
 	}
 
 	return nil
+}
+
+// GetSingletonID ..
+func (c *Client) GetSingletonID(name string) (string, error) {
+
+	req := graphql.NewRequest(`
+		query($type: Singletons!) {
+			getSingletonID(type:$type)
+		}
+	`)
+	req.Var("type", name)
+
+	type responseContainer struct {
+		GetSingletonID string `json:"getSingletonID"`
+	}
+
+	resp := new(responseContainer)
+	err := c.client.Run(c.ctx, req, &resp)
+	if err != nil {
+		return "", err
+	}
+
+	return resp.GetSingletonID, nil
 }
 
 // Push ...

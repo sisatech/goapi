@@ -46,6 +46,120 @@ func (c *Client) URL(typeof, uri string) string {
 
 }
 
+// AnalyzeQuery ...
+func (c *Client) AnalyzeQuery(path string) (*objects.DiskAnalysis, error) {
+
+	req := c.NewRequest(fmt.Sprintf(`
+                query ($path: String!) {
+                        analyze (path:$path) {
+				fileSystem {
+					contents {
+						accessTime
+						isDir
+						modTime
+						mode
+						path
+						size
+					}
+				}
+			}
+                }
+        `))
+	req.Var("path", path)
+
+	type responseContainer struct {
+		Analyze objects.DiskAnalysis `json:"analyze"`
+	}
+
+	resp := new(responseContainer)
+	err := c.client.Run(c.ctx, req, &resp)
+	if err != nil {
+		return nil, err
+	}
+
+	return &resp.Analyze, nil
+}
+
+// GermConfigQuery ..
+func (c *Client) GermConfigQuery(germ string) (*objects.VorteilConfiguration, error) {
+
+	req := c.NewRequest(fmt.Sprintf(`
+                query ($germ: String!) {
+                        germConfig (germ:$germ) {
+                                args
+                                binary
+                                env {
+                                        tuples {
+                                                key
+                                                value
+                                        }
+                                }
+                                info {
+                                        author
+                                        description
+                                        name
+                                        summary
+                                        url
+                                        version
+                                }
+                                networks {
+                                        disableTCPSegmentationOffload
+                                        gateway
+                                        http
+                                        https
+                                        ip
+                                        mask
+                                        mtu
+                                        tcp
+                                        udp
+                                }
+                                nfs {
+                                        mountPoint
+                                        server
+                                }
+                                redirects {
+                                        tuples {
+                                                key
+                                                value
+                                        }
+                                }
+                                system {
+                                        delay
+                                        diskCache
+                                        dns
+                                        hostname
+                                        maxFDs
+                                        outputFormat
+                                        pages4k
+                                        stdoutMode
+                                }
+                                vm {
+                                        cpus
+                                        diskSize
+                                        inodes
+                                        kernel
+                                        ram
+                                }
+                        }
+                }
+        `))
+
+	req.Var("germ", germ)
+
+	type responseContainer struct {
+		GermConfig objects.VorteilConfiguration `json:"germConfig"`
+	}
+
+	response := new(responseContainer)
+
+	err := c.client.Run(c.Context(), req, &response)
+	if err != nil {
+		return nil, err
+	}
+
+	return &response.GermConfig, nil
+}
+
 // DownloadGerm ... takes a save path to download the file, signed uri and type you are downloading and calls a get request for the file that it returns.
 func (c *Client) DownloadGerm(save, uri, typeof string) error {
 

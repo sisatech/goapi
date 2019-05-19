@@ -29,10 +29,25 @@ func (c *Client) ImportSharedObjects(project, variant string) ([]string, error) 
 
 // AddProject function adds a project to the vorteil list. Returns an error if it fails.
 func (c *Client) AddProject(path string) error {
-	req := c.NewRequest(`query($path: String!){
+	req := c.NewRequest(`mutation($path: String!){
 		addProject{
 			path
 		}
+	}`)
+
+	req.Var("path", path)
+
+	if err := c.client.Run(c.ctx, req, nil); err != nil {
+		return err
+	}
+
+	return nil
+}
+
+// RemoveProject ...
+func (c *Client) RemoveProject(path string) error {
+	req := c.NewRequest(`mutation($path: String!){
+		removeProject(path: $path)
 	}`)
 
 	req.Var("path", path)

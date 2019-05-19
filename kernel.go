@@ -1,5 +1,35 @@
 package goapi
 
+import (
+	"github.com/machinebox/graphql"
+	"github.com/sisatech/goapi/pkg/objects"
+)
+
+// GetDefaultQuery ..
+func (c *Client) GetDefaultQuery() (*objects.Defaults, error) {
+
+	req := graphql.NewRequest(`
+	query {
+		getDefault {
+			kernel
+			platform
+		}
+	}
+	`)
+
+	type responseContainer struct {
+		GetDefault objects.Defaults `json:"getDefault"`
+	}
+
+	resp := new(responseContainer)
+	err := c.client.Run(c.ctx, req, &resp)
+	if err != nil {
+		return nil, err
+	}
+
+	return &resp.GetDefault, nil
+}
+
 // UpdateKernels ...
 func (c *Client) UpdateKernels() error {
 	req := c.NewRequest(`mutation{
