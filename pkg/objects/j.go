@@ -1,11 +1,11 @@
 package objects
 
-// Job ..
+// Job ...
 type Job struct {
 	Description      string      `json:"description"`
 	ID               string      `json:"id"`
 	LogFilePath      string      `json:"logFilePath"`
-	logPlainFilePath string      `json:"logPlainFilePath"`
+	LogPlainFilePath string      `json:"logPlainFilePath"`
 	Name             string      `json:"name"`
 	Progress         JobProgress `json:"progress"`
 }
@@ -21,6 +21,7 @@ type JobProgress struct {
 	Units    string  `json:"units"`
 }
 
+// JobEdges ...
 type JobEdges struct {
 	Cursor string `json:"cursor"`
 	Node   Job    `json:"node"`

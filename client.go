@@ -9,8 +9,10 @@ import (
 	"github.com/machinebox/graphql"
 )
 
+// Scheme ...
 type Scheme string
 
+// Doer ...
 type Doer interface {
 	Do(*http.Request) (*http.Response, error)
 }
@@ -24,7 +26,7 @@ type Client struct {
 	ctx    context.Context
 }
 
-// ClientArgs - used to create a new Client
+// ClientConfig - used to create a new Client
 type ClientConfig struct {
 	Address string
 	Path    string
@@ -43,19 +45,23 @@ func NewClient(ctx context.Context, cfg *ClientConfig) (*Client, error) {
 	return c, nil
 }
 
+// NewRequest ...
 func (c *Client) NewRequest(str string) *graphql.Request {
 	req := graphql.NewRequest(str)
 	return req
 }
 
+// SetContext ...
 func (c *Client) SetContext(ctx context.Context) {
 	c.ctx = ctx
 }
 
+// Context ...
 func (c *Client) Context() context.Context {
 	return c.ctx
 }
 
+// Cookie ...
 func (c *Client) Cookie() *http.Cookie {
 	if c.cookie == nil {
 		return nil

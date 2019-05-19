@@ -57,6 +57,7 @@ type VcenterCloudArgs struct {
 	Cluster    string
 }
 
+// AzureCloudArgs ...
 type AzureCloudArgs struct {
 	GenericPlatformArgs
 	StorageAccount    string `json:"storageAccount"`

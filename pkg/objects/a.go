@@ -1,6 +1,6 @@
 package objects
 
-// Authorization ..
+// ACL ..
 type ACL struct {
 	Action string `json:"action"`
 	Group  string `json:"group"`

@@ -1,6 +1,6 @@
 package objects
 
-// FragmentReadExposedOnly ..
+// Fragment ...
 type Fragment struct {
 	DownloadURL string `json:"downloadURL"`
 	ID          string `json:"id"`
@@ -8,7 +8,7 @@ type Fragment struct {
 	UploadURL   string `json:"uploadURL"`
 }
 
-// Fragment ..
+// FragmentReadExposedOnly ..
 type FragmentReadExposedOnly Fragment
 
 // FileInfo ..
