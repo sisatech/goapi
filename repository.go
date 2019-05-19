@@ -4,8 +4,71 @@ import (
 	"fmt"
 	"net/http"
 
+	"github.com/sisatech/goapi/pkg/objects"
+
 	"github.com/sisatech/vcli/pkg/util/file"
 )
+
+// RemoveRepository ...
+func (c *Client) RemoveRepository(name string) error {
+
+	req := c.NewRequest(`mutation($name: String!){
+		removeNode(name: $name)
+	}`)
+
+	req.Var("name", name)
+
+	if err := c.client.Run(c.ctx, req, nil); err != nil {
+		return err
+	}
+
+	return nil
+}
+
+// Push ...
+func (c *Client) Push(app, tag, germ, node, bucket string, compressionLevel int, injects []string) (objects.GerminateOperation, error) {
+
+	req := c.NewRequest(`mutation($app: String!, $tag: String, $germ: GermString!, $node: String!, $bucket: String!, $compressionLevel: Int, $injects: [String]){
+		push(app: $app, tag: $tag, germ: $germ, node: $node, bucket: $bucket, compressionLevel: $compressionLevel, injections: $injects){
+			job{
+				description
+				id
+				logFilePath
+				logPlainFilePath
+				name
+				progress {
+					error
+					finished
+					progress
+					started
+					status
+					total
+					units
+				}
+			}
+			uri
+		}
+	}`)
+
+	req.Var("app", app)
+	req.Var("tag", tag)
+	req.Var("germ", germ)
+	req.Var("node", node)
+	req.Var("bucket", bucket)
+	req.Var("compressionLevel", compressionLevel)
+	req.Var("injects", injects)
+
+	type responseContainer struct {
+		Push objects.GerminateOperation `json:"push"`
+	}
+
+	pushWrapper := new(responseContainer)
+	if err := c.client.Run(c.ctx, req, &pushWrapper); err != nil {
+		return objects.GerminateOperation{}, err
+	}
+
+	return pushWrapper.Push, nil
+}
 
 // NewRepository ...
 func (c *Client) NewRepository(insecure bool, name, host, credentials string) error {

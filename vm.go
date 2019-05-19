@@ -1,5 +1,88 @@
 package goapi
 
+import (
+	"github.com/sisatech/goapi/pkg/objects"
+)
+
+// StopVM ...
+func (c *Client) StopVM(id string) error {
+	req := c.NewRequest(`mutation($id: String!){
+		stopVM(id: $id){
+			id
+		}	
+	}`)
+
+	req.Var("id", id)
+
+	if err := c.client.Run(c.ctx, req, nil); err != nil {
+		return err
+	}
+
+	return nil
+}
+
+// StartVM ...
+func (c *Client) StartVM(id string) error {
+	req := c.NewRequest(`mutation($id: ID!){
+		startVM(id: $id){
+			id
+		}
+	}`)
+
+	req.Var("id", id)
+
+	if err := c.client.Run(c.ctx, req, nil); err != nil {
+		return err
+	}
+
+	return nil
+}
+
+// Provision ...
+func (c *Client) Provision(germ, platform, kernelType, name string, injects []string, start bool) (objects.CompoundProvisionResponse, error) {
+	req := c.NewRequest(`mutation($germ: GermString!, $platform: String!, $kernelType: String, $name: String!, $injects: [String], $start: Boolean){
+		provision(germ: $germ, platform: $platform, kernelType: $kernelType, name: $name, injections: $injects, start: $start){
+			id
+			uri
+			job {
+				description
+				id
+				logFilePath
+				logPlainFilePath
+				name
+				progress {
+					error
+					finished
+					progress
+					started
+					status
+					total
+					units
+				
+				}
+			}
+		}
+	}`)
+
+	req.Var("germ", germ)
+	req.Var("platform", platform)
+	req.Var("kernelType", kernelType)
+	req.Var("name", name)
+	req.Var("injections", injects)
+	req.Var("start", start)
+
+	type responseContainer struct {
+		Provision objects.CompoundProvisionResponse `json:"provision"`
+	}
+
+	provisionWrapper := new(responseContainer)
+	if err := c.client.Run(c.ctx, req, &provisionWrapper); err != nil {
+		return objects.CompoundProvisionResponse{}, err
+	}
+
+	return provisionWrapper.Provision, nil
+}
+
 // PauseVM ...
 func (c *Client) PauseVM(id string) error {
 	req := c.NewRequest(`mutation($id: String!){

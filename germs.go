@@ -26,6 +26,7 @@ type InjectArgs struct {
 	Payload            file.File
 }
 
+// URL ...
 func (c *Client) URL(typeof, uri string) string {
 	var path string
 	switch typeof {
@@ -187,48 +188,6 @@ func (c *Client) Inject(op *objects.GerminateOperation, args *InjectArgs, typeof
 	}
 
 	return nil
-}
-
-// Pack ...
-func (c *Client) Pack(germ string, compressionLevel int, injections []string) (*objects.GerminateOperation, error) {
-
-	req := c.NewRequest(`mutation($germ: GermString!, $compression: Int, $injections: [String]){
-		pack(germ: $germ, compressionLevel: $compression, injections: $injections){
-			job {
-				id
-				description
-				logFilePath
-				logPlainFilePath
-				name
-				progress {
-					error
-					finished
-					progress
-					started
-					status
-					total
-					units
-				}
-			}
-			uri
-		}
-	}`)
-
-	req.Var("germ", germ)
-	req.Var("compression", compressionLevel)
-	req.Var("injections", injections)
-
-	type responseContainer struct {
-		GerminateOperation objects.GerminateOperation `json:"pack"`
-	}
-
-	packWrapper := new(responseContainer)
-
-	if err := c.client.Run(c.ctx, req, &packWrapper); err != nil {
-		return nil, err
-	}
-
-	return &packWrapper.GerminateOperation, nil
 }
 
 // Build ... takes a germ string to build from, a disk format, a kerneltype and injections. Returns a GerminateOperation which has a Job Object and an URI. The URI is used to post your injections to {vorteil daemon uri}/api/build/{uri}.
