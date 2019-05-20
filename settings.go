@@ -1,7 +1,6 @@
 package goapi
 
 import (
-	"github.com/machinebox/graphql"
 	"github.com/sisatech/goapi/pkg/objects"
 )
 
@@ -152,7 +151,7 @@ func (c *Client) ListDefaultsOptions() (*objects.Lists, error) {
 // GetDefaultQuery ..
 func (c *Client) GetDefaultQuery() (*objects.Defaults, error) {
 
-	req := graphql.NewRequest(`
+	req := c.NewRequest(`
 	query {
 		getDefault {
 			kernel

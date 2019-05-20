@@ -3,7 +3,6 @@ package goapi
 import (
 	"fmt"
 
-	"github.com/machinebox/graphql"
 	"github.com/sisatech/goapi/pkg/objects"
 )
 
@@ -93,7 +92,7 @@ func (c *Client) Pack(germ string, compressionLevel int, injections []string) (*
 // PackageConfig ..
 func (c *Client) PackageConfig(bucket, app, ref string) (*objects.PackageConfig, error) {
 
-	req := graphql.NewRequest(fmt.Sprintf(`
+	req := c.NewRequest(fmt.Sprintf(`
 		query {
 			packageConfig(bucket: "%s", app: "%s", ref: "%s") {
 				raw
@@ -131,7 +130,7 @@ func (c *Client) PackageConfig(bucket, app, ref string) (*objects.PackageConfig,
 // PackageInfo ..
 func (c *Client) PackageInfo(path string) (*objects.PackageInfo, error) {
 
-	req := graphql.NewRequest(fmt.Sprintf(`
+	req := c.NewRequest(fmt.Sprintf(`
 		query {
 			packageInfo(path: "%s") {
 				id

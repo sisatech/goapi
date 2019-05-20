@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/machinebox/graphql"
 	"github.com/sisatech/goapi/pkg/objects"
 )
 
@@ -34,7 +33,7 @@ func (a *App) Name() string {
 // Version ..
 func (a *App) Version(ref string) (*Version, error) {
 
-	req := graphql.NewRequest(fmt.Sprintf(`
+	req := a.bucket.g.NewRequest(fmt.Sprintf(`
                 query {
                         bucket(name: "%s") {
                                 app(name: "%s") {
@@ -72,7 +71,7 @@ func (a *App) VersionList(curs *Cursor) (*VersionList, error) {
 		vd, v = curs.Strings()
 	}
 
-	req := graphql.NewRequest(fmt.Sprintf(`
+	req := a.bucket.g.NewRequest(fmt.Sprintf(`
                 query%s {
                         bucket(name: "%s") {
                                 app(name: "%s") {
@@ -130,7 +129,7 @@ func (a *App) VersionList(curs *Cursor) (*VersionList, error) {
 // Latest ..
 func (a *App) Latest() (*Version, error) {
 
-	req := graphql.NewRequest(fmt.Sprintf(`
+	req := a.bucket.g.NewRequest(fmt.Sprintf(`
                 query {
                         bucket(name: "%s") {
                                 app(name: "%s") {
@@ -163,7 +162,7 @@ func (a *App) Latest() (*Version, error) {
 // Authorization ..
 func (a *App) Authorization() (*objects.Authorization, error) {
 
-	req := graphql.NewRequest(fmt.Sprintf(`
+	req := a.bucket.g.NewRequest(fmt.Sprintf(`
                 query {
                         bucket(name: "%s") {
                                 app(name: "%s") {

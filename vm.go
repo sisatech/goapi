@@ -4,7 +4,6 @@ import (
 	"encoding/json"
 	"fmt"
 
-	"github.com/machinebox/graphql"
 	"github.com/sisatech/goapi/pkg/graphqlws"
 	"github.com/sisatech/goapi/pkg/objects"
 )
@@ -322,7 +321,7 @@ func (c *Client) ListVMs(curs *Cursor) (*VMList, error) {
 		vd, v = curs.Strings()
 	}
 
-	req := graphql.NewRequest(fmt.Sprintf(`
+	req := c.NewRequest(fmt.Sprintf(`
 		query%s {
 			listVMs%s {
 				edges {

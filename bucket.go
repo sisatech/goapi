@@ -4,7 +4,6 @@ import (
 	"encoding/json"
 	"fmt"
 
-	"github.com/machinebox/graphql"
 	"github.com/sisatech/goapi/pkg/graphqlws"
 	"github.com/sisatech/goapi/pkg/objects"
 )
@@ -35,7 +34,7 @@ func (b *Bucket) Name() string {
 // App ..
 func (b *Bucket) App(name string) (*App, error) {
 
-	req := graphql.NewRequest(fmt.Sprintf(`
+	req := b.g.NewRequest(fmt.Sprintf(`
                 query {
                         bucket(name: "%s") {
                                 app(name: "%s") {
@@ -69,7 +68,7 @@ func (b *Bucket) AppList(curs *Cursor) (*AppList, error) {
 		vd, v = curs.Strings()
 	}
 
-	req := graphql.NewRequest(fmt.Sprintf(`
+	req := b.g.NewRequest(fmt.Sprintf(`
                 query%s {
                         bucket(name: "%s") {
                                 appsList%s {
@@ -118,7 +117,7 @@ func (b *Bucket) AppList(curs *Cursor) (*AppList, error) {
 // Authorization ..
 func (b *Bucket) Authorization() (*objects.Authorization, error) {
 
-	req := graphql.NewRequest(fmt.Sprintf(`
+	req := b.g.NewRequest(fmt.Sprintf(`
                 query {
                         bucket(name: "%s") {
                                 authorization {
@@ -149,7 +148,7 @@ func (b *Bucket) Authorization() (*objects.Authorization, error) {
 // Icon ..
 func (b *Bucket) Icon() (*objects.Fragment, error) {
 
-	req := graphql.NewRequest(fmt.Sprintf(`
+	req := b.g.NewRequest(fmt.Sprintf(`
                 query {
                         bucket(name: "%s") {
                                 icon {
@@ -178,7 +177,7 @@ func (b *Bucket) Icon() (*objects.Fragment, error) {
 // GetBucket ..
 func (c *Client) GetBucket(name string) (*Bucket, error) {
 
-	req := graphql.NewRequest(fmt.Sprintf(`
+	req := c.NewRequest(fmt.Sprintf(`
                 query {
                         bucket(name: "%s") {
                                 name
@@ -210,7 +209,7 @@ func (c *Client) ListBuckets(curs *Cursor) (*BucketList, error) {
 		vd, v = curs.Strings()
 	}
 
-	req := graphql.NewRequest(fmt.Sprintf(`
+	req := c.NewRequest(fmt.Sprintf(`
                 query%s {
                         listBuckets%s {
                                 edges {
