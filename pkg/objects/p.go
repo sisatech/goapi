@@ -2,11 +2,11 @@ package objects
 
 // Package ..
 type Package struct {
-	File              FragmentReadExposedOnly `json:"file"`
-	Icon              FragmentReadExposedOnly `json:"icon"`
-	ID                string                  `json:"id"`
-	Tag               string                  `json:"tag"`
-	UploadedTimeplate int                     `json:"uploadedTimeplate"`
+	File              PackageFragment `json:"file"`
+	Icon              PackageFragment `json:"icon"`
+	ID                string          `json:"id"`
+	Tag               string          `json:"tag"`
+	UploadedTimeplate int             `json:"uploadedTimeplate"`
 }
 
 // PackageConfig ..

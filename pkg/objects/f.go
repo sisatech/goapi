@@ -11,6 +11,14 @@ type Fragment struct {
 // FragmentReadExposedOnly ..
 type FragmentReadExposedOnly Fragment
 
+// PackageFragment ..
+type PackageFragment struct {
+	MD5         string `json:"md5"`
+	URL         string `json:"url"`
+	Size        int64  `json:"size"`
+	DownloadURL string `json:"downloadURL"`
+}
+
 // FileInfo ..
 type FileInfo struct {
 	ModTime int    `json:"modTime"`
