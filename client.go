@@ -47,7 +47,7 @@ func NewClient(ctx context.Context, cfg *ClientConfig) (*Client, error) {
 
 	c := &Client{
 		cfg:  cfg,
-		ctx:  context.Background(),
+		ctx:  ctx,
 		http: http.DefaultClient,
 	}
 
