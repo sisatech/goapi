@@ -7,7 +7,7 @@ import (
 	"github.com/machinebox/graphql"
 	"github.com/sisatech/goapi/pkg/objects"
 
-	"github.com/sisatech/vcli/pkg/util/file"
+	"github.com/sisatech/goapi/pkg/file"
 )
 
 // RemoveRepository ...

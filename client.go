@@ -101,14 +101,6 @@ func (c *Client) Get(url string) (*http.Response, error) {
 	return http.DefaultClient.Do(req)
 }
 
-// CursorArgs ..
-type CursorArgs struct {
-	After  string `json:"after"`
-	Before string `json:"before"`
-	First  int    `json:"first"`
-	Last   int    `json:"last"`
-}
-
 // Do ..
 func (c *Client) Do(r *http.Request) (*http.Response, error) {
 	// r.Header.Set(VersionHeaderKey, Version.Release)

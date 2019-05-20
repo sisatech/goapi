@@ -46,7 +46,7 @@ func (c *Client) JobQuery(id string) (*objects.Job, error) {
 }
 
 // JobsQuery ..
-func (c *Client) JobsQuery(cursor *CursorArgs) (*objects.JobsConnection, error) {
+func (c *Client) JobsQuery(cursor *Cursor) (*objects.JobsConnection, error) {
 
 	variableDeclarations, variables := cursor.Strings()
 	req := graphql.NewRequest(fmt.Sprintf(`

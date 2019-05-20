@@ -8,8 +8,8 @@ import (
 	"os"
 	"time"
 
+	"github.com/sisatech/goapi/pkg/file"
 	"github.com/sisatech/goapi/pkg/objects"
-	"github.com/sisatech/vcli/pkg/util/file"
 )
 
 // InjectArgs ...
