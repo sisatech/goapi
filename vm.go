@@ -122,7 +122,8 @@ func (c *Client) StartVM(id string) error {
 }
 
 // Provision ...
-func (c *Client) Provision(germ, platform, kernelType, name string, injects []string, start bool) (objects.CompoundProvisionResponse, error) {
+func (c *Client) Provision(germ, platform, kernelType, name string, injects []string, start bool) (*objects.CompoundProvisionResponse, error) {
+
 	req := c.NewRequest(`mutation($germ: GermString!, $platform: String!, $kernelType: String, $name: String!, $injects: [String], $start: Boolean){
 		provision(germ: $germ, platform: $platform, kernelType: $kernelType, name: $name, injections: $injects, start: $start){
 			id
@@ -159,11 +160,12 @@ func (c *Client) Provision(germ, platform, kernelType, name string, injects []st
 	}
 
 	provisionWrapper := new(responseContainer)
+
 	if err := c.client.Run(c.ctx, req, &provisionWrapper); err != nil {
-		return objects.CompoundProvisionResponse{}, err
+		return nil, err
 	}
 
-	return provisionWrapper.Provision, nil
+	return &provisionWrapper.Provision, nil
 }
 
 // PauseVM ...

@@ -4,6 +4,103 @@ import (
 	"github.com/sisatech/goapi/pkg/objects"
 )
 
+// PackageInfo ...
+func (c *Client) PackageInfo(path string) (*objects.PackageInfo, error) {
+
+	req := c.NewRequest(`query($path: String!){
+		packageInfo(path: $path){
+			components {
+				binary {
+				  modtime
+				  name
+				  size
+				}
+				filesystem {
+				  modtime
+				  name
+				  size
+				}
+				vcfg {
+				  modtime
+				  name
+				  size
+				}
+			  }
+			  configurationDetails {
+				app
+				author
+				binaryArgs
+				cpus
+				description
+				diskSize
+				kernel
+				memory
+				summary
+				totalNICs
+				url
+				version
+			  }
+			  files
+			  id
+			  timestamp
+		}
+	}`)
+
+	req.Var("path", path)
+
+	type responseContainer struct {
+		PackageInfo objects.PackageInfo `json:"packageInfo"`
+	}
+
+	piWrapper := new(responseContainer)
+
+	if err := c.client.Run(c.ctx, req, &piWrapper); err != nil {
+		return nil, err
+	}
+
+	return &piWrapper.PackageInfo, nil
+}
+
+// PackageConfig ...
+func (c *Client) PackageConfig(bucket, app, ref string) (*objects.PackageConfig, error) {
+
+	req := c.NewRequest(`query($bucket: String!, $app: String!, $ref: String!){
+		packageConfig(bucket: $bucket, app: $app, ref: $ref){
+			info{
+				app
+				author
+				binaryArgs
+				cpus
+				description
+				diskSize
+				kernel
+				memory
+				summary
+				totalNICs
+				url
+				version
+			}
+			raw
+		}
+	}`)
+
+	req.Var("bucket", bucket)
+	req.Var("app", app)
+	req.Var("ref", ref)
+
+	type responseContainer struct {
+		PackageConfig objects.PackageConfig `json:"packageConfig"`
+	}
+
+	pcWrapper := new(responseContainer)
+
+	if err := c.client.Run(c.ctx, req, &pcWrapper); err != nil {
+		return nil, err
+	}
+
+	return &pcWrapper.PackageConfig, nil
+}
+
 // Unpack ...
 func (c *Client) Unpack(germ string, injections []string) (*objects.GerminateOperation, error) {
 
