@@ -1,9 +1,11 @@
 package goapi
 
 import (
+	"encoding/json"
 	"fmt"
 
 	"github.com/machinebox/graphql"
+	"github.com/sisatech/goapi/pkg/graphqlws"
 	"github.com/sisatech/goapi/pkg/objects"
 )
 
@@ -424,4 +426,134 @@ func (c *Client) ListVMs(curs *Cursor) (*VMList, error) {
 	}
 
 	return out, nil
+}
+
+// ListVMsSubscription ..
+func (c *Client) ListVMsSubscription(dataCallback func(list *VMList,
+	errs []graphqlws.GQLError), errCallback func(error)) (*graphqlws.Subscription, error) {
+
+	dc := func(payload *graphqlws.GQLDataPayload) {
+
+		if payload.Data != nil {
+			dataCallback(nil, payload.Errors)
+		}
+
+		type responseContainer struct {
+			Data struct {
+				ListVMs objects.VMsConnection `json:"listVMs"`
+			} `json:"data"`
+		}
+
+		resp := new(responseContainer)
+		b, err := json.Marshal(payload)
+		if err != nil {
+			panic(err)
+		}
+
+		err = json.Unmarshal(b, resp)
+		if err != nil {
+			panic(err)
+		}
+
+		out := new(VMList)
+		out.PageInfo = resp.Data.ListVMs.PageInfo
+		out.Items = make([]VMListItem, 0)
+
+		for _, v := range resp.Data.ListVMs.Edges {
+			out.Items = append(out.Items, VMListItem{
+				Cursor: v.Cursor,
+				VM:     v.Node,
+			})
+		}
+
+		dataCallback(out, payload.Errors)
+	}
+
+	subscription, err := c.subscriptions.Subscription(&graphqlws.SubscriptionConfig{
+		Query: fmt.Sprintf(`
+			subscription {
+				listVMs {
+					pageInfo {
+						endCursor
+						startCursor
+						hasNextPage
+						hasPreviousPage
+					}
+					edges {
+						cursor
+						node {
+							args
+							author
+							binary
+							cpus
+							created
+							date
+							disk
+							download
+							env
+							hostname
+							id
+							instance
+							kernel
+							logFile
+							name
+							networks {
+							gateway
+							http {
+								address
+								port
+							}
+							https {
+								address
+								port
+							}
+							ip
+							mask
+							name
+							tcp {
+								address
+								port
+							}
+							udp {
+								address
+								port
+							}
+							}
+							platform
+							ram
+							redirects {
+							address
+							source
+							}
+							serial {
+							cursor
+							data
+							more
+							}
+							source {
+							checksum
+							filesystem
+							icon
+							job
+							name
+							type
+							}
+							stateLog
+							status
+							summary
+							url
+							version
+						}
+					}
+				}
+			}
+		`),
+		DataCallback:  dc,
+		ErrorCallback: errCallback,
+	})
+	if err != nil {
+		return nil, err
+	}
+
+	return subscription, nil
 }
