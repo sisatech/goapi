@@ -77,3 +77,15 @@ type VorteilConfiguration struct {
 	System    SystemConfiguration `json:"system"`
 	VM        ConfigVM            `json:"vm"`
 }
+
+// VMsConnection ..
+type VMsConnection struct {
+	PageInfo PageInfo  `json:"pageInfo"`
+	Edges    []VMsEdge `json:"edges"`
+}
+
+// VMsEdge ..
+type VMsEdge struct {
+	Cursor string `json:"cursor"`
+	Node   VM     `json:"node"`
+}
