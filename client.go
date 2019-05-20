@@ -7,6 +7,7 @@ import (
 	"net/http"
 
 	"github.com/machinebox/graphql"
+	"github.com/sisatech/goapi/pkg/graphqlws"
 )
 
 // Scheme ...
@@ -19,11 +20,12 @@ type Doer interface {
 
 // Client ..
 type Client struct {
-	http   *http.Client
-	cfg    *ClientConfig
-	cookie *http.Cookie
-	client *graphql.Client
-	ctx    context.Context
+	http          *http.Client
+	cfg           *ClientConfig
+	cookie        *http.Cookie
+	client        *graphql.Client
+	ctx           context.Context
+	subscriptions *graphqlws.Client
 }
 
 // ClientConfig - used to create a new Client
