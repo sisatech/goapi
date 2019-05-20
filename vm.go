@@ -4,6 +4,89 @@ import (
 	"github.com/sisatech/goapi/pkg/objects"
 )
 
+// VM ...
+func (c *Client) VM(id string) (*objects.VM, error) {
+	req := c.NewRequest(`query($id: ID!){
+		vm(id: $id){
+			args
+			author
+			binary
+			cpus
+			created
+			date
+			disk
+			download
+			env
+			hostname
+			id
+			instance
+			kernel
+			logFile
+			name
+			networks {
+			gateway
+			http {
+				address
+				port
+			}
+			https {
+				address
+				port
+			}
+			ip
+			mask
+			name
+			tcp {
+				address
+				port
+			}
+			udp {
+				address
+				port
+			}
+			}
+			platform
+			ram
+			redirects {
+			address
+			source
+			}
+			serial {
+			cursor
+			data
+			more
+			}
+			source {
+			checksum
+			filesystem
+			icon
+			job
+			name
+			type
+			}
+			stateLog
+			status
+			summary
+			url
+			version
+		}
+	}`)
+
+	req.Var("id", id)
+
+	type responseContainer struct {
+		VM objects.VM `json:"vm"`
+	}
+
+	vmWrapper := new(responseContainer)
+
+	if err := c.client.Run(c.ctx, req, &vmWrapper); err != nil {
+		return nil, err
+	}
+
+	return &vmWrapper.VM, nil
+}
+
 // StopVM ...
 func (c *Client) StopVM(id string) error {
 	req := c.NewRequest(`mutation($id: String!){

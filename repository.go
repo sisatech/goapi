@@ -4,11 +4,32 @@ import (
 	"fmt"
 	"net/http"
 
-	"github.com/machinebox/graphql"
 	"github.com/sisatech/goapi/pkg/objects"
 
 	"github.com/sisatech/vcli/pkg/util/file"
 )
+
+// ListNodes ...
+func (c *Client) ListNodes() ([]objects.Node, error) {
+	req := c.NewRequest(`query{
+		listNodes{
+			host
+			name
+			type
+		}
+	}`)
+
+	type responseContainer struct {
+		ListNodes []objects.Node `json:"listNodes"`
+	}
+
+	nodesWrapper := new(responseContainer)
+
+	if err := c.client.Run(c.ctx, req, &nodesWrapper); err != nil {
+		return nil, err
+	}
+	return nodesWrapper.ListNodes, nil
+}
 
 // RemoveRepository ...
 func (c *Client) RemoveRepository(name string) error {
@@ -24,59 +45,6 @@ func (c *Client) RemoveRepository(name string) error {
 	}
 
 	return nil
-}
-
-// ListACLsQuery ..
-func (c *Client) ListACLsQuery(id string) ([]*objects.ACL, error) {
-
-	req := graphql.NewRequest(`
-                query($id: String!) {
-                        listACLRules(id: $id) {
-                                acls {
-                                        group
-                                        action
-                                }
-                        }
-                }
-        `)
-	req.Var("id", id)
-
-	type responseContainer struct {
-		ListACLRules struct {
-			ACLs []*objects.ACL `json:"acls"`
-		} `json:"listACLRules"`
-	}
-
-	resp := new(responseContainer)
-	err := c.client.Run(c.ctx, req, &resp)
-	if err != nil {
-		return nil, err
-	}
-
-	return resp.ListACLRules.ACLs, nil
-}
-
-// GetSingletonID ..
-func (c *Client) GetSingletonID(name string) (string, error) {
-
-	req := graphql.NewRequest(`
-		query($type: Singletons!) {
-			getSingletonID(type:$type)
-		}
-	`)
-	req.Var("type", name)
-
-	type responseContainer struct {
-		GetSingletonID string `json:"getSingletonID"`
-	}
-
-	resp := new(responseContainer)
-	err := c.client.Run(c.ctx, req, &resp)
-	if err != nil {
-		return "", err
-	}
-
-	return resp.GetSingletonID, nil
 }
 
 // Push ...
