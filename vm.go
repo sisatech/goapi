@@ -434,8 +434,9 @@ func (c *Client) ListVMsSubscription(dataCallback func(list *VMList,
 
 	dc := func(payload *graphqlws.GQLDataPayload) {
 
-		if payload.Data != nil {
+		if payload.Data == nil {
 			dataCallback(nil, payload.Errors)
+			return
 		}
 
 		type responseContainer struct {

@@ -1,9 +1,11 @@
 package goapi
 
 import (
+	"encoding/json"
 	"fmt"
 
 	"github.com/machinebox/graphql"
+	"github.com/sisatech/goapi/pkg/graphqlws"
 	"github.com/sisatech/goapi/pkg/objects"
 )
 
@@ -255,4 +257,61 @@ func (c *Client) ListBuckets(curs *Cursor) (*BucketList, error) {
 	}
 
 	return out, nil
+}
+
+// ListBucketsSubscription ..
+func (c *Client) ListBucketsSubscription(dataCallback func([]string, []graphqlws.GQLError),
+	errCallback func(error)) (*graphqlws.Subscription, error) {
+
+	dc := func(payload *graphqlws.GQLDataPayload) {
+
+		if payload.Data == nil {
+			dataCallback(nil, payload.Errors)
+			return
+		}
+
+		type responseContainer struct {
+			Data struct {
+				ListBuckets objects.BucketsConnection `json:"listBuckets"`
+			} `json:"data"`
+		}
+
+		resp := new(responseContainer)
+		b, err := json.Marshal(payload)
+		if err != nil {
+			panic(err)
+		}
+
+		err = json.Unmarshal(b, resp)
+		if err != nil {
+			panic(err)
+		}
+
+		out := make([]string, 0)
+		for _, b := range resp.Data.ListBuckets.Edges {
+			out = append(out, b.Node.Name)
+		}
+
+		dataCallback(out, payload.Errors)
+	}
+
+	subscription, err := c.subscriptions.Subscription(&graphqlws.SubscriptionConfig{
+		Query: `
+			subscription {
+				listBuckets {
+					edges {
+						node {
+							name
+						}
+					}
+				}
+			}`,
+		DataCallback:  dc,
+		ErrorCallback: errCallback,
+	})
+	if err != nil {
+		return nil, err
+	}
+
+	return subscription, nil
 }

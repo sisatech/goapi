@@ -7,12 +7,11 @@ import (
 	"github.com/sisatech/goapi/pkg/objects"
 )
 
-// DefaultsSubscription ..
-func (c *Client) DefaultsSubscription(dataCallback func(payload *objects.Defaults, errs []graphqlws.GQLError),
-	errCallback func(err error)) (*graphqlws.Subscription, error) {
+// ListNodesSubscription ..
+func (c *Client) ListNodesSubscription(dataCallback func([]objects.Node, []graphqlws.GQLError),
+	errCallback func(error)) (*graphqlws.Subscription, error) {
 
-	var dc func(payload *graphqlws.GQLDataPayload)
-	dc = func(payload *graphqlws.GQLDataPayload) {
+	dc := func(payload *graphqlws.GQLDataPayload) {
 
 		if payload.Data == nil {
 			dataCallback(nil, payload.Errors)
@@ -21,7 +20,7 @@ func (c *Client) DefaultsSubscription(dataCallback func(payload *objects.Default
 
 		type responseContainer struct {
 			Data struct {
-				Defaults objects.Defaults `json:"defaults"`
+				ListNodes []objects.Node `json:"listNodes"`
 			} `json:"data"`
 		}
 
@@ -37,19 +36,20 @@ func (c *Client) DefaultsSubscription(dataCallback func(payload *objects.Default
 			panic(err)
 		}
 
-		dataCallback(&resp.Data.Defaults, payload.Errors)
+		dataCallback(resp.Data.ListNodes, payload.Errors)
 	}
 
 	subscription, err := c.subscriptions.Subscription(&graphqlws.SubscriptionConfig{
-		Query: `
-                        subscription {
-                                defaults {
-                                        kernel
-                                        platform
-                                }
-                        }`,
 		DataCallback:  dc,
 		ErrorCallback: errCallback,
+		Query: `
+		subscription {
+			listNodes {
+				host
+				name
+				type
+			}
+		}`,
 	})
 	if err != nil {
 		return nil, err
