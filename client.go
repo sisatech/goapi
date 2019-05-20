@@ -32,6 +32,7 @@ type Client struct {
 type ClientConfig struct {
 	Address string
 	Path    string
+	WSPath  string
 }
 
 // NewClient returns a Client according to the provided *ClientArgs
@@ -43,7 +44,18 @@ func NewClient(ctx context.Context, cfg *ClientConfig) (*Client, error) {
 		http: http.DefaultClient,
 	}
 
-	c.client = graphql.NewClient(c.graphqlURL())
+	clientURL := fmt.Sprintf("http://%s", c.graphqlURL())
+	c.client = graphql.NewClient(clientURL)
+
+	var err error
+	c.subscriptions, err = graphqlws.NewClient(c.ctx, &graphqlws.ClientConfig{
+		Address: c.cfg.Address,
+		Path:    c.cfg.WSPath,
+	})
+	if err != nil {
+		return nil, err
+	}
+
 	return c, nil
 }
 
