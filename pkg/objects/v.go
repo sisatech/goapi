@@ -6,8 +6,8 @@ type VM struct {
 	Author    string       `json:"author"`
 	Binary    string       `json:"binary"`
 	CPUs      int          `json:"cpus"`
-	Created   int64        `json:"created"`
-	Date      int64        `json:"date"`
+	Created   string       `json:"created"`
+	Date      string       `json:"date"`
 	Disk      string       `json:"disk"`
 	Download  string       `json:"download"`
 	Env       []string     `json:"env"`

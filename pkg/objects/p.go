@@ -9,6 +9,41 @@ type Package struct {
 	UploadedTimeplate int                     `json:"uploadedTimeplate"`
 }
 
+// PackageConfig ..
+type PackageConfig struct {
+	Info struct {
+		App         string `json:"app"`
+		Author      string `json:"author"`
+		BinaryArgs  string `json:"binaryArgs"`
+		CPUs        int    `json:"cpus"`
+		Description string `json:"description"`
+		DiskSize    int    `json:"diskSize"`
+		Kernel      string `json:"kernel"`
+		Memory      int    `json:"memory"`
+		Summary     string `json:"summary"`
+		TotalNICs   int    `json:"totalNICs"`
+		URL         string `json:"url"`
+		Version     string `json:"version"`
+	} `json:"info"`
+	Raw string `json:"raw"`
+}
+
+// PackageComponents ...
+type PackageComponents struct {
+	Binary     FileInfo `json:"binary"`
+	FileSystem FileInfo `json:"filesystem"`
+	VCFG       FileInfo `json:"vcfg"`
+}
+
+// PackageInfo ...
+type PackageInfo struct {
+	Components           PackageComponents `json:"components"`
+	ConfigurationDetails PackageConfig     `json:"configurationDetails"`
+	Files                []string          `json:"files"`
+	ID                   string            `json:"id"`
+	Timestamp            int               `json:"timestamp"`
+}
+
 // PackagesEdge ..
 type PackagesEdge struct {
 	Cursor string  `json:"cursor"`
