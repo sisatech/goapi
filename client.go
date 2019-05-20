@@ -31,6 +31,7 @@ type Client struct {
 }
 
 type basicAuth struct {
+	headerKey string
 	headerVal string
 }
 
@@ -65,16 +66,41 @@ func NewClient(ctx context.Context, cfg *ClientConfig) (*Client, error) {
 	return c, nil
 }
 
+// KeyAuthentication ..
+func (c *Client) KeyAuthentication(key string) error {
+
+	c.basicAuth = &basicAuth{
+		headerKey: "Cookie",
+		headerVal: "vauth=" + key,
+	}
+
+	header := make(http.Header)
+	header.Set(c.basicAuth.headerKey, c.basicAuth.headerVal)
+
+	var err error
+	c.subscriptions, err = graphqlws.NewClient(c.ctx, &graphqlws.ClientConfig{
+		Address: c.cfg.Address,
+		Path:    c.cfg.WSPath,
+		Header:  header,
+	})
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
 // BasicAuthentication ..
 func (c *Client) BasicAuthentication(user, pw string) error {
 
 	creds := []byte(fmt.Sprintf("%s:%s", user, pw))
-	credStr := base64.StdEncoding.EncodeToString(creds)
+	credStr := "Basic " + base64.StdEncoding.EncodeToString(creds)
 
 	header := make(http.Header)
-	header.Set("Authorization", "Basic "+credStr)
+	header.Set("Authorization", credStr)
 
 	c.basicAuth = &basicAuth{
+		headerKey: "Authorization",
 		headerVal: credStr,
 	}
 
@@ -95,7 +121,7 @@ func (c *Client) BasicAuthentication(user, pw string) error {
 func (c *Client) NewRequest(str string) *graphql.Request {
 	req := graphql.NewRequest(str)
 	if c.basicAuth != nil {
-		req.Header.Set("Authorization", "Basic "+c.basicAuth.headerVal)
+		req.Header.Set(c.basicAuth.headerKey, c.basicAuth.headerVal)
 	}
 
 	return req
