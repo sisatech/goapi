@@ -1,6 +1,10 @@
 package goapi
 
-import "fmt"
+import (
+	"fmt"
+
+	"github.com/machinebox/graphql"
+)
 
 // Cursor ..
 type Cursor struct {
