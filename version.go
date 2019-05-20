@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/machinebox/graphql"
 	"github.com/sisatech/goapi/pkg/objects"
 )
 
@@ -40,7 +39,7 @@ func (v *Version) UploadedTime() time.Time {
 // File ..
 func (v *Version) File() (*objects.PackageFragment, error) {
 
-	req := graphql.NewRequest(fmt.Sprintf(`
+	req := v.app.bucket.g.NewRequest(fmt.Sprintf(`
                 query {
                         bucket(name: "%s") {
                                 app(name: "%s") {
@@ -73,7 +72,7 @@ func (v *Version) File() (*objects.PackageFragment, error) {
 // Icon ..
 func (v *Version) Icon() (*objects.PackageFragment, error) {
 
-	req := graphql.NewRequest(fmt.Sprintf(`
+	req := v.app.bucket.g.NewRequest(fmt.Sprintf(`
                 query {
                         bucket(name: "%s") {
                                 app(name: "%s") {
@@ -106,7 +105,7 @@ func (v *Version) Icon() (*objects.PackageFragment, error) {
 // Tag ..
 func (v *Version) Tag() (string, error) {
 
-	req := graphql.NewRequest(fmt.Sprintf(`
+	req := v.app.bucket.g.NewRequest(fmt.Sprintf(`
                 query {
                         bucket(name: "%s") {
                                 app(name: "%s") {

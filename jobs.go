@@ -3,14 +3,13 @@ package goapi
 import (
 	"fmt"
 
-	"github.com/machinebox/graphql"
 	"github.com/sisatech/goapi/pkg/objects"
 )
 
 // JobQuery ..
 func (c *Client) JobQuery(id string) (*objects.Job, error) {
 
-	req := graphql.NewRequest(`
+	req := c.NewRequest(`
                 query($id: String!) {
                         job(id:$id) {
                                 id
@@ -49,7 +48,7 @@ func (c *Client) JobQuery(id string) (*objects.Job, error) {
 func (c *Client) JobsQuery(cursor *Cursor) (*objects.JobsConnection, error) {
 
 	variableDeclarations, variables := cursor.Strings()
-	req := graphql.NewRequest(fmt.Sprintf(`
+	req := c.NewRequest(fmt.Sprintf(`
                 query%s {
                         jobs%s {
                                 edges {

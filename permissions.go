@@ -1,7 +1,6 @@
 package goapi
 
 import (
-	"github.com/machinebox/graphql"
 	"github.com/sisatech/goapi/pkg/objects"
 )
 
@@ -65,7 +64,7 @@ func (c *Client) DeleteACLRule(id, action, group string) error {
 // ListACLsQuery ..
 func (c *Client) ListACLsQuery(id string) ([]*objects.ACL, error) {
 
-	req := graphql.NewRequest(`
+	req := c.NewRequest(`
                 query($id: String!) {
                         listACLRules(id: $id) {
                                 acls {
@@ -95,7 +94,7 @@ func (c *Client) ListACLsQuery(id string) ([]*objects.ACL, error) {
 // GetSingletonID ..
 func (c *Client) GetSingletonID(name string) (string, error) {
 
-	req := graphql.NewRequest(`
+	req := c.NewRequest(`
 		query($type: Singletons!) {
 			getSingletonID(type:$type)
 		}

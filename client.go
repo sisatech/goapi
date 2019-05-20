@@ -2,6 +2,7 @@ package goapi
 
 import (
 	"context"
+	"encoding/base64"
 	"fmt"
 	"io"
 	"net/http"
@@ -26,6 +27,11 @@ type Client struct {
 	client        *graphql.Client
 	ctx           context.Context
 	subscriptions *graphqlws.Client
+	basicAuth     *basicAuth
+}
+
+type basicAuth struct {
+	headerVal string
 }
 
 // ClientConfig - used to create a new Client
@@ -59,9 +65,39 @@ func NewClient(ctx context.Context, cfg *ClientConfig) (*Client, error) {
 	return c, nil
 }
 
+// BasicAuthentication ..
+func (c *Client) BasicAuthentication(user, pw string) error {
+
+	creds := []byte(fmt.Sprintf("%s:%s", user, pw))
+	credStr := base64.StdEncoding.EncodeToString(creds)
+
+	header := make(http.Header)
+	header.Set("Authorization", "Basic "+credStr)
+
+	c.basicAuth = &basicAuth{
+		headerVal: credStr,
+	}
+
+	var err error
+	c.subscriptions, err = graphqlws.NewClient(c.ctx, &graphqlws.ClientConfig{
+		Address: c.cfg.Address,
+		Path:    c.cfg.WSPath,
+		Header:  header,
+	})
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
 // NewRequest ...
 func (c *Client) NewRequest(str string) *graphql.Request {
 	req := graphql.NewRequest(str)
+	if c.basicAuth != nil {
+		req.Header.Set("Authorization", "Basic "+c.basicAuth.headerVal)
+	}
+
 	return req
 }
 
@@ -114,6 +150,11 @@ func (c *Client) Get(url string) (*http.Response, error) {
 	}
 	return http.DefaultClient.Do(req)
 }
+
+// func (c *Client) NewRequest(str string) *graphql.Request {
+// 	req := graphql.NewRequest(str)
+// 	req.Header.Set("")
+// }
 
 // Do ..
 func (c *Client) Do(r *http.Request) (*http.Response, error) {

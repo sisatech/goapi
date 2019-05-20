@@ -1,7 +1,6 @@
 package goapi
 
 import (
-	"fmt"
 	"net/http"
 
 	"github.com/sisatech/goapi/pkg/objects"
@@ -115,21 +114,19 @@ func (c *Client) NewRepository(insecure bool, name, host, credentials string) er
 // UploadApp ...
 func (c *Client) UploadApp(uri string, f file.File) error {
 
-	fmt.Println("2")
 	defer f.Close()
 
 	r, err := http.NewRequest(http.MethodPost, c.cfg.Address+uri, f)
 	if err != nil {
 		return err
 	}
-	fmt.Println("ffdsf")
+
 	resp, err := c.Do(r)
 	if err != nil {
 		return err
 	}
 	defer resp.Body.Close()
 
-	fmt.Println("ffdsdssf")
 	// if resp.StatusCode != http.StatusOK {
 	// 	data, _ := ioutil.ReadAll(resp.Body)
 	// 	return fmt.Errorf("status [%v] %s", resp.StatusCode, data)

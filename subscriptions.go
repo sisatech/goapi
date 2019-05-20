@@ -191,8 +191,9 @@ func (c *Client) DefaultsSubscription(dataCallback func(payload *objects.Default
 	var dc func(payload *graphqlws.GQLDataPayload)
 	dc = func(payload *graphqlws.GQLDataPayload) {
 
-		if payload.Data != nil {
+		if payload.Data == nil {
 			dataCallback(nil, payload.Errors)
+			return
 		}
 
 		type responseContainer struct {
