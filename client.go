@@ -9,6 +9,7 @@ import (
 
 	"github.com/machinebox/graphql"
 	"github.com/sisatech/goapi/pkg/graphqlws"
+	"github.com/sisatech/log15"
 )
 
 // Scheme ...
@@ -28,6 +29,7 @@ type Client struct {
 	ctx           context.Context
 	subscriptions *graphqlws.Client
 	basicAuth     *basicAuth
+	logger        *logger
 }
 
 type basicAuth struct {
@@ -42,13 +44,36 @@ type ClientConfig struct {
 	WSPath  string
 }
 
+type logger struct {
+	log log15.Logger
+}
+
+func NewLogger(log log15.Logger) *logger {
+	if log == nil {
+		log = log15.Root()
+	}
+
+	return &logger{log: log}
+}
+
+func (l *logger) Info(message string) {
+	l.log.Info(message)
+}
+
+func (l *logger) Error(message string) {
+	l.log.Error(message)
+}
+
 // NewClient returns a Client according to the provided *ClientArgs
 func NewClient(ctx context.Context, cfg *ClientConfig) (*Client, error) {
 
+	l := NewLogger(nil)
+
 	c := &Client{
-		cfg:  cfg,
-		ctx:  ctx,
-		http: http.DefaultClient,
+		cfg:    cfg,
+		ctx:    ctx,
+		http:   http.DefaultClient,
+		logger: l,
 	}
 
 	clientURL := fmt.Sprintf("http://%s", c.graphqlURL())
@@ -58,6 +83,7 @@ func NewClient(ctx context.Context, cfg *ClientConfig) (*Client, error) {
 	c.subscriptions, err = graphqlws.NewClient(c.ctx, &graphqlws.ClientConfig{
 		Address: c.cfg.Address,
 		Path:    c.cfg.WSPath,
+		Logger:  c.logger,
 	})
 	if err != nil {
 		return nil, err
@@ -108,6 +134,7 @@ func (c *Client) BasicAuthentication(user, pw string) error {
 	c.subscriptions, err = graphqlws.NewClient(c.ctx, &graphqlws.ClientConfig{
 		Address: c.cfg.Address,
 		Path:    c.cfg.WSPath,
+		Logger:  c.logger,
 		Header:  header,
 	})
 	if err != nil {
