@@ -1,6 +1,7 @@
 package goapi
 
 import (
+	"bytes"
 	"context"
 	"encoding/base64"
 	"fmt"
@@ -42,6 +43,7 @@ type ClientConfig struct {
 	Address string
 	Path    string
 	WSPath  string
+	Key     string
 }
 
 type logger struct {
@@ -76,10 +78,14 @@ func NewClient(ctx context.Context, cfg *ClientConfig) (*Client, error) {
 		logger: l,
 	}
 
+	err := c.KeyAuthentication(cfg.Key)
+	if err != nil {
+		return nil, err
+	}
+
 	clientURL := fmt.Sprintf("http://%s", c.graphqlURL())
 	c.client = graphql.NewClient(clientURL)
 
-	var err error
 	c.subscriptions, err = graphqlws.NewClient(c.ctx, &graphqlws.ClientConfig{
 		Address: c.cfg.Address,
 		Path:    c.cfg.WSPath,
@@ -95,6 +101,22 @@ func NewClient(ctx context.Context, cfg *ClientConfig) (*Client, error) {
 // KeyAuthentication ..
 func (c *Client) KeyAuthentication(key string) error {
 
+	resp, err := c.http.Post(fmt.Sprintf("http://%s/api/login", c.cfg.Address),
+		"application/json", bytes.NewReader([]byte(`{"key": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJkYXRhIjoie1wiaWRcIjpcImlhc2twYnl5am9zcFwiLFwidXNlcm5hbWVcIjpcInVzZXJcIixcImNyZWF0ZWRcIjoxNTU4NDEwNzY0LFwicHJpbWFyeWdyb3VwXCI6XCJ1c2VyXCIsXCJncm91cHNcIjpbXCJ1c2VyXCIsXCJwdWJsaWNcIl0sXCJjb21tZW50XCI6XCJcIn0iLCJzYWx0IjoiU0NDa3o0UWpmeitldWtiL3ppS2NhUFVjQ3E0RkJjeE84WWsyWlhkTEcwRT0ifQ.nRMJWfwFYuV5-UV6wSfhN7gQoKm6tKVrpcXUtm0JjEg"}`)))
+	if err != nil {
+		return err
+	}
+	defer resp.Body.Close()
+	if resp.StatusCode != http.StatusOK {
+		return fmt.Errorf("response had a non-200 status code: %v", resp.StatusCode)
+	}
+
+	for _, c := range resp.Cookies() {
+		if c.Name == "vauth" {
+			key = c.Value
+		}
+	}
+
 	c.basicAuth = &basicAuth{
 		headerKey: "Cookie",
 		headerVal: "vauth=" + key,
@@ -103,7 +125,6 @@ func (c *Client) KeyAuthentication(key string) error {
 	header := make(http.Header)
 	header.Set(c.basicAuth.headerKey, c.basicAuth.headerVal)
 
-	var err error
 	c.subscriptions, err = graphqlws.NewClient(c.ctx, &graphqlws.ClientConfig{
 		Address: c.cfg.Address,
 		Path:    c.cfg.WSPath,
