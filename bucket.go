@@ -74,7 +74,9 @@ func (b *Bucket) AppList(curs *Cursor) (*AppList, error) {
                                 appsList%s {
                                         edges {
                                                 cursor
-                                                node
+                                                node {
+							name
+						}
                                         }
                                         pageInfo {
                                                 endCursor
