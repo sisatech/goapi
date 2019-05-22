@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+	"strings"
 
 	"github.com/inconshreveable/log15"
 	"github.com/machinebox/graphql"
@@ -219,7 +220,13 @@ func (c *Client) Post(url string, contentType string, body io.Reader) (*http.Res
 
 // Get wraps http.Get()
 func (c *Client) Get(url string) (*http.Response, error) {
-	req, err := http.NewRequest(http.MethodGet, url, nil)
+
+	base := c.cfg.Address
+	if !strings.HasPrefix(base, "https://") && !strings.HasPrefix(base, "http://") {
+		base = fmt.Sprintf("http://%s", base)
+	}
+
+	req, err := http.NewRequest(http.MethodGet, fmt.Sprintf(c.cfg.Address, url), nil)
 	if err != nil {
 		return nil, err
 	}
