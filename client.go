@@ -44,6 +44,7 @@ type ClientConfig struct {
 	Path    string
 	WSPath  string
 	Key     string
+	Logger  log15.Logger
 }
 
 type logger struct {
@@ -70,8 +71,8 @@ func (l *logger) Error(message string) {
 func NewClient(ctx context.Context, cfg *ClientConfig) (*Client, error) {
 
 	var err error
-	l := NewLogger(nil)
 
+	l := NewLogger(cfg.Logger)
 	c := &Client{
 		cfg:    cfg,
 		ctx:    ctx,
