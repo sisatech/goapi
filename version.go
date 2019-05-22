@@ -158,9 +158,9 @@ func (v *Version) RemoveTag() error {
 
 	req := graphql.NewRequest(fmt.Sprintf(`
 		mutation {
-			tagApp(bucketName: "%s", appName: "%s", reference: "%s", tag: "%s")
+			tagApp(bucketName: "%s", appName: "%s", reference: "%s", tag: "")
 		}
-	`, v.app.bucket.Name(), v.app.Name(), v.ID(), v.ID()))
+	`, v.app.bucket.Name(), v.app.Name(), v.ID()))
 
 	type responseContainer struct {
 		TagApp string `json:"tagApp"`
