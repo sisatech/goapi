@@ -8,9 +8,9 @@ import (
 	"io"
 	"net/http"
 
+	"github.com/inconshreveable/log15"
 	"github.com/machinebox/graphql"
 	"github.com/sisatech/goapi/pkg/graphqlws"
-	"github.com/sisatech/log15"
 )
 
 // Scheme ...
