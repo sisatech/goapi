@@ -226,7 +226,7 @@ func (c *Client) Get(url string) (*http.Response, error) {
 		base = fmt.Sprintf("http://%s", base)
 	}
 
-	req, err := http.NewRequest(http.MethodGet, fmt.Sprintf(c.cfg.Address, url), nil)
+	req, err := http.NewRequest(http.MethodGet, fmt.Sprintf("%s%s", base, url), nil)
 	if err != nil {
 		return nil, err
 	}
