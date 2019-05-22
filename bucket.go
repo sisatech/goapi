@@ -3,7 +3,10 @@ package goapi
 import (
 	"encoding/json"
 	"fmt"
+	"io"
+	"net/http"
 
+	"github.com/machinebox/graphql"
 	"github.com/sisatech/goapi/pkg/graphqlws"
 	"github.com/sisatech/goapi/pkg/objects"
 )
@@ -315,4 +318,47 @@ func (c *Client) ListBucketsSubscription(dataCallback func([]string, []graphqlws
 	}
 
 	return subscription, nil
+}
+
+// NewAppRequestArguments ..
+type NewAppRequestArguments struct {
+	Bucket string
+	App    string
+	Tag    string
+	File   io.Reader
+}
+
+// NewApp..
+func (b *Bucket) NewApp(args *NewAppRequestArguments) error {
+
+	vars := fmt.Sprintf(`bucket:"%s", app:"%s"`)
+	if args.Tag != "" {
+		vars = fmt.Sprintf(`(%s, tag:"%s")`, vars, args.Tag)
+	}
+
+	req := graphql.NewRequest(fmt.Sprintf(`
+		mutation {
+			newApp%s
+		}
+	`, vars))
+
+	type responseContainer struct {
+		NewApp string `json:"newApp"`
+	}
+
+	resp := new(responseContainer)
+	err := b.g.client.Run(b.g.ctx, req, &resp)
+	if err != nil {
+		return err
+	}
+
+	res, err := b.g.Post(resp.NewApp, "application/octet-stream", args.File)
+	if err != nil {
+		return err
+	}
+	if res.StatusCode != http.StatusOK {
+		return fmt.Errorf("failed to upload: %s", res.Status)
+	}
+
+	return nil
 }
