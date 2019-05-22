@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/machinebox/graphql"
 	"github.com/sisatech/goapi/pkg/objects"
 )
 
@@ -128,4 +129,48 @@ func (v *Version) Tag() (string, error) {
 	}
 
 	return resp.Bucket.App.Version.Tag, nil
+}
+
+// SetTag ..
+func (v *Version) SetTag(tag string) error {
+
+	req := graphql.NewRequest(fmt.Sprintf(`
+		mutation {
+			tagApp(bucketName: "%s", appName: "%s", reference: "%s", tag: "%s")
+		}
+	`, v.app.bucket.Name(), v.app.Name(), v.ID(), tag))
+
+	type responseContainer struct {
+		TagApp string `json:"tagApp"`
+	}
+
+	resp := new(responseContainer)
+	err := v.app.bucket.g.client.Run(v.app.bucket.g.ctx, req, &resp)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+// RemoveTag ..
+func (v *Version) RemoveTag() error {
+
+	req := graphql.NewRequest(fmt.Sprintf(`
+		mutation {
+			tagApp(bucketName: "%s", appName: "%s", reference: "%s", tag: "%s")
+		}
+	`, v.app.bucket.Name(), v.app.Name(), v.ID(), v.ID()))
+
+	type responseContainer struct {
+		TagApp string `json:"tagApp"`
+	}
+
+	resp := new(responseContainer)
+	err := v.app.bucket.g.client.Run(v.app.bucket.g.ctx, req, &resp)
+	if err != nil {
+		return err
+	}
+
+	return nil
 }
