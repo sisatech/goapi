@@ -208,7 +208,13 @@ func (c *Client) loginURL() string {
 
 // Post wraps http.Post()
 func (c *Client) Post(url string, contentType string, body io.Reader) (*http.Response, error) {
-	req, err := http.NewRequest(http.MethodPost, url, body)
+
+	base := c.cfg.Address
+	if !strings.HasPrefix(base, "https://") && !strings.HasPrefix(base, "http://") {
+		base = fmt.Sprintf("http://%s", base)
+	}
+
+	req, err := http.NewRequest(http.MethodPost, fmt.Sprintf("%s%s", base, url), body)
 	if err != nil {
 		return nil, err
 	}
