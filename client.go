@@ -69,6 +69,7 @@ func (l *logger) Error(message string) {
 // NewClient returns a Client according to the provided *ClientArgs
 func NewClient(ctx context.Context, cfg *ClientConfig) (*Client, error) {
 
+	var err error
 	l := NewLogger(nil)
 
 	c := &Client{
@@ -78,9 +79,11 @@ func NewClient(ctx context.Context, cfg *ClientConfig) (*Client, error) {
 		logger: l,
 	}
 
-	err := c.KeyAuthentication(cfg.Key)
-	if err != nil {
-		return nil, err
+	if cfg.Key != "" {
+		err = c.KeyAuthentication(cfg.Key)
+		if err != nil {
+			return nil, err
+		}
 	}
 
 	clientURL := fmt.Sprintf("http://%s", c.graphqlURL())
@@ -102,7 +105,7 @@ func NewClient(ctx context.Context, cfg *ClientConfig) (*Client, error) {
 func (c *Client) KeyAuthentication(key string) error {
 
 	resp, err := c.http.Post(fmt.Sprintf("http://%s/api/login", c.cfg.Address),
-		"application/json", bytes.NewReader([]byte(`{"key": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJkYXRhIjoie1wiaWRcIjpcImlhc2twYnl5am9zcFwiLFwidXNlcm5hbWVcIjpcInVzZXJcIixcImNyZWF0ZWRcIjoxNTU4NDEwNzY0LFwicHJpbWFyeWdyb3VwXCI6XCJ1c2VyXCIsXCJncm91cHNcIjpbXCJ1c2VyXCIsXCJwdWJsaWNcIl0sXCJjb21tZW50XCI6XCJcIn0iLCJzYWx0IjoiU0NDa3o0UWpmeitldWtiL3ppS2NhUFVjQ3E0RkJjeE84WWsyWlhkTEcwRT0ifQ.nRMJWfwFYuV5-UV6wSfhN7gQoKm6tKVrpcXUtm0JjEg"}`)))
+		"application/json", bytes.NewReader([]byte(fmt.Sprintf(`{"key": "%s"}`, c.cfg.Key))))
 	if err != nil {
 		return err
 	}
