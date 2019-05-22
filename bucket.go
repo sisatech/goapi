@@ -322,16 +322,15 @@ func (c *Client) ListBucketsSubscription(dataCallback func([]string, []graphqlws
 
 // NewAppRequestArguments ..
 type NewAppRequestArguments struct {
-	Bucket string
-	App    string
-	Tag    string
-	File   io.Reader
+	Name string
+	Tag  string
+	File io.Reader
 }
 
 // NewApp..
 func (b *Bucket) NewApp(args *NewAppRequestArguments) error {
 
-	vars := fmt.Sprintf(`bucket:"%s", app:"%s"`)
+	vars := fmt.Sprintf(`bucket:"%s", app:"%s"`, b.Name(), args.Name)
 	if args.Tag != "" {
 		vars = fmt.Sprintf(`(%s, tag:"%s")`, vars, args.Tag)
 	}
