@@ -40,7 +40,7 @@ func (v *Version) UploadedTime() time.Time {
 // File ..
 func (v *Version) File() (*objects.PackageFragment, error) {
 
-	req := v.app.bucket.g.NewRequest(fmt.Sprintf(`
+	req := v.app.bucket.r.newRequest(fmt.Sprintf(`
                 query {
                         bucket(name: "%s") {
                                 app(name: "%s") {
@@ -62,7 +62,7 @@ func (v *Version) File() (*objects.PackageFragment, error) {
 	}
 
 	resp := new(responseContainer)
-	err := v.app.bucket.g.client.Run(v.app.bucket.g.ctx, req, &resp)
+	err := v.app.bucket.r.mgr.c.graphql.Run(v.app.bucket.r.mgr.c.ctx, req, &resp)
 	if err != nil {
 		return nil, err
 	}
@@ -73,7 +73,7 @@ func (v *Version) File() (*objects.PackageFragment, error) {
 // Icon ..
 func (v *Version) Icon() (*objects.PackageFragment, error) {
 
-	req := v.app.bucket.g.NewRequest(fmt.Sprintf(`
+	req := v.app.bucket.r.newRequest(fmt.Sprintf(`
                 query {
                         bucket(name: "%s") {
                                 app(name: "%s") {
@@ -95,7 +95,7 @@ func (v *Version) Icon() (*objects.PackageFragment, error) {
 	}
 
 	resp := new(responseContainer)
-	err := v.app.bucket.g.client.Run(v.app.bucket.g.ctx, req, &resp)
+	err := v.app.bucket.r.mgr.c.graphql.Run(v.app.bucket.r.mgr.c.ctx, req, &resp)
 	if err != nil {
 		return nil, err
 	}
@@ -106,7 +106,7 @@ func (v *Version) Icon() (*objects.PackageFragment, error) {
 // Tag ..
 func (v *Version) Tag() (string, error) {
 
-	req := v.app.bucket.g.NewRequest(fmt.Sprintf(`
+	req := v.app.bucket.r.newRequest(fmt.Sprintf(`
                 query {
                         bucket(name: "%s") {
                                 app(name: "%s") {
@@ -123,7 +123,7 @@ func (v *Version) Tag() (string, error) {
 	}
 
 	resp := new(responseContainer)
-	err := v.app.bucket.g.client.Run(v.app.bucket.g.ctx, req, &resp)
+	err := v.app.bucket.r.mgr.c.graphql.Run(v.app.bucket.r.mgr.c.ctx, req, &resp)
 	if err != nil {
 		return "", err
 	}
@@ -145,7 +145,7 @@ func (v *Version) SetTag(tag string) error {
 	}
 
 	resp := new(responseContainer)
-	err := v.app.bucket.g.client.Run(v.app.bucket.g.ctx, req, &resp)
+	err := v.app.bucket.r.mgr.c.graphql.Run(v.app.bucket.r.mgr.c.ctx, req, &resp)
 	if err != nil {
 		return err
 	}
@@ -167,10 +167,37 @@ func (v *Version) RemoveTag() error {
 	}
 
 	resp := new(responseContainer)
-	err := v.app.bucket.g.client.Run(v.app.bucket.g.ctx, req, &resp)
+	err := v.app.bucket.r.mgr.c.graphql.Run(v.app.bucket.r.mgr.c.ctx, req, &resp)
 	if err != nil {
 		return err
 	}
 
 	return nil
+}
+
+// Delete ..
+func (v *Version) Delete() error {
+
+	req := v.app.bucket.r.newRequest(fmt.Sprintf(`
+		mutation {
+			deleteAppVersion(bucketName: "%s", appName: "%s", reference: "%s") {
+				name
+			}
+		}
+	`, v.app.bucket.Name(), v.app.Name(), v.ID()))
+
+	type responseContainer struct {
+		DeleteAppVersion objects.App `json:"deleteAppVersion"`
+	}
+
+	resp := new(responseContainer)
+	err := v.app.bucket.r.mgr.c.graphql.Run(v.app.bucket.r.mgr.c.ctx, req, &resp)
+	return err
+}
+
+// Germ returns a string that can be used to identify this app/version. This can
+// be used in operations such as build, or run.
+func (v *Version) Germ() string {
+	return fmt.Sprintf("%s:%s/%s/%s", v.app.bucket.r.name, v.app.bucket.Name(),
+		v.app.Name(), v.ID())
 }

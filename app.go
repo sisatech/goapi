@@ -7,7 +7,7 @@ import (
 	"github.com/sisatech/goapi/pkg/objects"
 )
 
-// App ..
+// App represents an application within a bucket in a Vorteil repository.
 type App struct {
 	bucket *Bucket
 	name   string
@@ -25,15 +25,18 @@ type AppListItem struct {
 	App    App
 }
 
-// Name ..
+// Name returns the protected 'name' field of the App.
 func (a *App) Name() string {
 	return a.name
 }
 
-// Version ..
+// Version fetches a specific version of an App. The 'ref' argument can be
+// either the hash or tag of the desired version. If the specified version could
+// not be found, or the user has insufficient permissions, an error will be
+// returned. Exactly one returned argument will be non-nil.
 func (a *App) Version(ref string) (*Version, error) {
 
-	req := a.bucket.g.NewRequest(fmt.Sprintf(`
+	req := a.bucket.r.newRequest(fmt.Sprintf(`
                 query {
                         bucket(name: "%s") {
                                 app(name: "%s") {
@@ -51,7 +54,7 @@ func (a *App) Version(ref string) (*Version, error) {
 	}
 
 	resp := new(responseContainer)
-	err := a.bucket.g.client.Run(a.bucket.g.ctx, req, &resp)
+	err := a.bucket.r.mgr.c.graphql.Run(a.bucket.r.mgr.c.ctx, req, &resp)
 	if err != nil {
 		return nil, err
 	}
@@ -63,7 +66,9 @@ func (a *App) Version(ref string) (*Version, error) {
 	}, nil
 }
 
-// VersionList ..
+// VersionList fetches a list of all versions of the App. The 'curs' optional
+// argument allows for pagination information to be passed to the request.
+// Exactly one returned argument will be non-nil.
 func (a *App) VersionList(curs *Cursor) (*VersionList, error) {
 
 	var vd, v string
@@ -71,7 +76,7 @@ func (a *App) VersionList(curs *Cursor) (*VersionList, error) {
 		vd, v = curs.Strings()
 	}
 
-	req := a.bucket.g.NewRequest(fmt.Sprintf(`
+	req := a.bucket.r.newRequest(fmt.Sprintf(`
                 query%s {
                         bucket(name: "%s") {
                                 app(name: "%s") {
@@ -103,7 +108,7 @@ func (a *App) VersionList(curs *Cursor) (*VersionList, error) {
 	}
 
 	resp := new(responseContainer)
-	err := a.bucket.g.client.Run(a.bucket.g.ctx, req, &resp)
+	err := a.bucket.r.mgr.c.graphql.Run(a.bucket.r.mgr.c.ctx, req, &resp)
 	if err != nil {
 		return nil, err
 	}
@@ -126,10 +131,11 @@ func (a *App) VersionList(curs *Cursor) (*VersionList, error) {
 	return out, nil
 }
 
-// Latest ..
+// Latest fetches the most recently uploaded version of an App.
+// Exactly one returned argument will be non-nil.
 func (a *App) Latest() (*Version, error) {
 
-	req := a.bucket.g.NewRequest(fmt.Sprintf(`
+	req := a.bucket.r.newRequest(fmt.Sprintf(`
                 query {
                         bucket(name: "%s") {
                                 app(name: "%s") {
@@ -147,7 +153,7 @@ func (a *App) Latest() (*Version, error) {
 	}
 
 	resp := new(responseContainer)
-	err := a.bucket.g.client.Run(a.bucket.g.ctx, req, &resp)
+	err := a.bucket.r.mgr.c.graphql.Run(a.bucket.r.mgr.c.ctx, req, &resp)
 	if err != nil {
 		return nil, err
 	}
@@ -159,10 +165,12 @@ func (a *App) Latest() (*Version, error) {
 	}, nil
 }
 
-// Authorization ..
+// Authorization returns a list of all Access Control Rules defined for the App,
+// where the caller has adequate permissions to do so. Exactly one returned
+// argument will be non-nil.
 func (a *App) Authorization() (*objects.Authorization, error) {
 
-	req := a.bucket.g.NewRequest(fmt.Sprintf(`
+	req := a.bucket.r.newRequest(fmt.Sprintf(`
                 query {
                         bucket(name: "%s") {
                                 app(name: "%s") {
@@ -184,10 +192,34 @@ func (a *App) Authorization() (*objects.Authorization, error) {
 	}
 
 	resp := new(responseContainer)
-	err := a.bucket.g.client.Run(a.bucket.g.ctx, req, &resp)
+	err := a.bucket.r.mgr.c.graphql.Run(a.bucket.r.mgr.c.ctx, req, &resp)
 	if err != nil {
 		return nil, err
 	}
 
 	return &resp.Bucket.App.Authorization, nil
+}
+
+// Delete deletes the App from the repository.
+func (a *App) Delete() error {
+
+	req := a.bucket.r.newRequest(fmt.Sprintf(`
+		mutation {
+			deleteApp(bucketName: "%s", appName: "%s")
+		}
+	`, a.bucket.Name(), a.Name()))
+
+	type responseContainer struct {
+		DeleteApp bool `json:"deleteApp"`
+	}
+
+	resp := new(responseContainer)
+	err := a.bucket.r.mgr.c.graphql.Run(a.bucket.r.mgr.c.ctx, req, &resp)
+	return err
+}
+
+// Germ returns a string that can be used to identify this app. This can
+// be used in operations such as build, or run.
+func (a *App) Germ() string {
+	return fmt.Sprintf("%s:%s/%s", a.bucket.r.name, a.bucket.Name(), a.Name())
 }

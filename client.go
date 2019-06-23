@@ -1,100 +1,44 @@
 package goapi
 
 import (
-	"bytes"
 	"context"
-	"encoding/base64"
 	"fmt"
-	"io"
-	"net/http"
 	"strings"
 
-	"github.com/inconshreveable/log15"
+	"code.vorteil.io/vorteil/apis/goapi/pkg/graphqlws"
 	"github.com/machinebox/graphql"
-	"github.com/sisatech/goapi/pkg/graphqlws"
 )
 
-// Scheme ...
-type Scheme string
+// NewClient ..
+func NewClient(cfg *ClientConfig) (*Client, error) {
 
-// Doer ...
-type Doer interface {
-	Do(*http.Request) (*http.Response, error)
-}
-
-// Client ..
-type Client struct {
-	http          *http.Client
-	cfg           *ClientConfig
-	cookie        *http.Cookie
-	client        *graphql.Client
-	ctx           context.Context
-	subscriptions *graphqlws.Client
-	basicAuth     *basicAuth
-	logger        *logger
-}
-
-type basicAuth struct {
-	headerKey string
-	headerVal string
-}
-
-// ClientConfig - used to create a new Client
-type ClientConfig struct {
-	Address string
-	Path    string
-	WSPath  string
-	Key     string
-	Logger  log15.Logger
-}
-
-type logger struct {
-	log log15.Logger
-}
-
-func NewLogger(log log15.Logger) *logger {
-	if log == nil {
-		log = log15.Root()
+	c := &Client{
+		ctx:         context.Background(),
+		cfg:         cfg,
+		machinesMgr: &MachinesManager{},
+		reposMgr: &RepositoriesManager{
+			Local: &Repository{
+				name: "local",
+			},
+		},
+		buildMgr: &BuildManager{},
 	}
-
-	return &logger{log: log}
-}
-
-func (l *logger) Info(message string) {
-	l.log.Info(message)
-}
-
-func (l *logger) Error(message string) {
-	l.log.Error(message)
-}
-
-// NewClient returns a Client according to the provided *ClientArgs
-func NewClient(ctx context.Context, cfg *ClientConfig) (*Client, error) {
+	c.machinesMgr.c = c
+	c.machinesMgr.environment = c.reposMgr.Local
+	c.reposMgr.c = c
+	c.buildMgr.c = c
+	c.buildMgr.environment = c.reposMgr.Local
 
 	var err error
-
-	l := NewLogger(cfg.Logger)
-	c := &Client{
-		cfg:    cfg,
-		ctx:    ctx,
-		http:   http.DefaultClient,
-		logger: l,
+	err = c.init()
+	if err != nil {
+		return nil, err
 	}
 
-	if cfg.Key != "" {
-		err = c.KeyAuthentication(cfg.Key)
-		if err != nil {
-			return nil, err
-		}
-	}
-
-	clientURL := fmt.Sprintf("http://%s", c.graphqlURL())
-	c.client = graphql.NewClient(clientURL)
-
+	c.graphql = graphql.NewClient(fmt.Sprintf("%s%s/graphql", c.protocol, c.cfg.Address))
 	c.subscriptions, err = graphqlws.NewClient(c.ctx, &graphqlws.ClientConfig{
 		Address: c.cfg.Address,
-		Path:    c.cfg.WSPath,
-		Logger:  c.logger,
+		Path:    "subscriptions",
 	})
 	if err != nil {
 		return nil, err
@@ -103,175 +47,58 @@ func NewClient(ctx context.Context, cfg *ClientConfig) (*Client, error) {
 	return c, nil
 }
 
-// KeyAuthentication ..
-func (c *Client) KeyAuthentication(key string) error {
+// Client provides access to the Vorteil API by establishing a connection to the
+// specified Vorteil environment.
+type Client struct {
+	ctx           context.Context
+	cfg           *ClientConfig
+	protocol      string
+	reposMgr      *RepositoriesManager
+	machinesMgr   *MachinesManager
+	buildMgr      *BuildManager
+	subscriptions *graphqlws.Client
+	graphql       *graphql.Client
+}
 
-	resp, err := c.http.Post(fmt.Sprintf("http://%s/api/login", c.cfg.Address),
-		"application/json", bytes.NewReader([]byte(fmt.Sprintf(`{"key": "%s"}`, c.cfg.Key))))
-	if err != nil {
-		return err
+// ClientConfig contains fields essential for the configuration of a new Client
+type ClientConfig struct {
+	Address           string
+	AuthenticationKey string
+}
+
+func (c *Client) init() error {
+
+	if c.cfg.Address == "" {
+		return fmt.Errorf("address field may not be empty")
 	}
-	defer resp.Body.Close()
-	if resp.StatusCode != http.StatusOK {
-		return fmt.Errorf("response had a non-200 status code: %v", resp.StatusCode)
+	if strings.HasPrefix(c.cfg.Address, "https://") {
+		c.protocol = "https://"
+		c.cfg.Address = strings.TrimPrefix(c.cfg.Address, "https://")
+	} else if strings.HasPrefix(c.cfg.Address, "http://") {
+		c.cfg.Address = strings.TrimPrefix(c.cfg.Address, "http://")
+	}
+	if c.protocol == "" {
+		c.protocol = "http://"
 	}
 
-	for _, c := range resp.Cookies() {
-		if c.Name == "vauth" {
-			key = c.Value
-		}
-	}
-
-	c.basicAuth = &basicAuth{
-		headerKey: "Cookie",
-		headerVal: "vauth=" + key,
-	}
-
-	header := make(http.Header)
-	header.Set(c.basicAuth.headerKey, c.basicAuth.headerVal)
-
-	c.subscriptions, err = graphqlws.NewClient(c.ctx, &graphqlws.ClientConfig{
-		Address: c.cfg.Address,
-		Path:    c.cfg.WSPath,
-		Header:  header,
-	})
-	if err != nil {
-		return err
-	}
+	c.reposMgr.Local.mgr = c.reposMgr
+	c.reposMgr.Local.hdr = make(map[string][]string)
+	c.reposMgr.Local.host = fmt.Sprintf("%s%s", c.protocol, c.cfg.Address)
 
 	return nil
 }
 
-// BasicAuthentication ..
-func (c *Client) BasicAuthentication(user, pw string) error {
-
-	creds := []byte(fmt.Sprintf("%s:%s", user, pw))
-	credStr := "Basic " + base64.StdEncoding.EncodeToString(creds)
-
-	header := make(http.Header)
-	header.Set("Authorization", credStr)
-
-	c.basicAuth = &basicAuth{
-		headerKey: "Authorization",
-		headerVal: credStr,
-	}
-
-	var err error
-	c.subscriptions, err = graphqlws.NewClient(c.ctx, &graphqlws.ClientConfig{
-		Address: c.cfg.Address,
-		Path:    c.cfg.WSPath,
-		Logger:  c.logger,
-		Header:  header,
-	})
-	if err != nil {
-		return err
-	}
-
-	return nil
+// MachinesManager ..
+func (c *Client) Machines() *MachinesManager {
+	return c.machinesMgr
 }
 
-// NewRequest ...
-func (c *Client) NewRequest(str string) *graphql.Request {
-	req := graphql.NewRequest(str)
-	if c.basicAuth != nil {
-		req.Header.Set(c.basicAuth.headerKey, c.basicAuth.headerVal)
-	}
-
-	return req
+// BuildsManager ..
+func (c *Client) Builds() *BuildManager {
+	return c.buildMgr
 }
 
-// SetContext ...
-func (c *Client) SetContext(ctx context.Context) {
-	c.ctx = ctx
-}
-
-// Context ...
-func (c *Client) Context() context.Context {
-	return c.ctx
-}
-
-// Cookie ...
-func (c *Client) Cookie() *http.Cookie {
-	if c.cookie == nil {
-		return nil
-	}
-	return c.cookie
-}
-
-func (c *Client) graphqlURL() string {
-	return fmt.Sprintf("%s/graphql", c.cfg.Address)
-}
-
-func (c *Client) loginURL() string {
-	return fmt.Sprintf("%s/api/login", c.cfg.Address)
-}
-
-// Post wraps http.Post()
-func (c *Client) Post(url string, contentType string, body io.Reader) (*http.Response, error) {
-
-	base := c.cfg.Address
-	if !strings.HasPrefix(base, "https://") && !strings.HasPrefix(base, "http://") {
-		base = fmt.Sprintf("http://%s", base)
-	}
-
-	req, err := http.NewRequest(http.MethodPost, fmt.Sprintf("%s%s", base, url), body)
-	if err != nil {
-		return nil, err
-	}
-	if c.Cookie() != nil {
-		req.AddCookie(c.cookie)
-	}
-	return http.DefaultClient.Do(req)
-}
-
-// Get wraps http.Get()
-func (c *Client) Get(url string) (*http.Response, error) {
-
-	base := c.cfg.Address
-	if !strings.HasPrefix(base, "https://") && !strings.HasPrefix(base, "http://") {
-		base = fmt.Sprintf("http://%s", base)
-	}
-
-	req, err := http.NewRequest(http.MethodGet, fmt.Sprintf("%s%s", base, url), nil)
-	if err != nil {
-		return nil, err
-	}
-	if c.Cookie() != nil {
-		req.AddCookie(c.cookie)
-	}
-	return http.DefaultClient.Do(req)
-}
-
-// func (c *Client) NewRequest(str string) *graphql.Request {
-// 	req := graphql.NewRequest(str)
-// 	req.Header.Set("")
-// }
-
-// Do ..
-func (c *Client) Do(r *http.Request) (*http.Response, error) {
-	// r.Header.Set(VersionHeaderKey, Version.Release)
-
-	// if c.Forward != "" {
-	// 	c.Logger.Debug(fmt.Sprintf("Forwarding request: %s", c.Forward))
-	// 	r.Header.Set("Vorteil", c.Forward)
-	// }
-	// resp, err := c.http.Do(r)
-	// if err != nil {
-	// 	return nil, err
-	// }
-
-	// v := resp.Header.Get(VersionHeaderKey)
-	// x := strings.SplitN(v, ".", 3)
-
-	// var maj, min uint
-	// maj = uint(ContractMajor)
-	// min = uint(ContractMinor)
-
-	// cont := contracts.Contract{
-	// 	Major: &maj,
-	// 	Minor: &min,
-	// }
-
-	return c.http.Do(r)
-
+// RepositoriesManager ..
+func (c *Client) Repositories() *RepositoriesManager {
+	return c.reposMgr
 }

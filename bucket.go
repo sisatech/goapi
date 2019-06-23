@@ -1,19 +1,14 @@
 package goapi
 
 import (
-	"encoding/json"
 	"fmt"
-	"io"
-	"net/http"
 
-	"github.com/machinebox/graphql"
-	"github.com/sisatech/goapi/pkg/graphqlws"
 	"github.com/sisatech/goapi/pkg/objects"
 )
 
 // Bucket ..
 type Bucket struct {
-	g    *Client
+	r    *Repository
 	name string
 }
 
@@ -37,7 +32,7 @@ func (b *Bucket) Name() string {
 // App ..
 func (b *Bucket) App(name string) (*App, error) {
 
-	req := b.g.NewRequest(fmt.Sprintf(`
+	req := b.r.newRequest(fmt.Sprintf(`
                 query {
                         bucket(name: "%s") {
                                 app(name: "%s") {
@@ -52,7 +47,7 @@ func (b *Bucket) App(name string) (*App, error) {
 	}
 
 	resp := new(responseContainer)
-	err := b.g.client.Run(b.g.ctx, req, &resp)
+	err := b.r.mgr.c.graphql.Run(b.r.mgr.c.ctx, req, &resp)
 	if err != nil {
 		return nil, err
 	}
@@ -71,7 +66,7 @@ func (b *Bucket) AppList(curs *Cursor) (*AppList, error) {
 		vd, v = curs.Strings()
 	}
 
-	req := b.g.NewRequest(fmt.Sprintf(`
+	req := b.r.newRequest(fmt.Sprintf(`
                 query%s {
                         bucket(name: "%s") {
                                 appsList%s {
@@ -97,7 +92,7 @@ func (b *Bucket) AppList(curs *Cursor) (*AppList, error) {
 	}
 
 	resp := new(responseContainer)
-	err := b.g.client.Run(b.g.ctx, req, &resp)
+	err := b.r.mgr.c.graphql.Run(b.r.mgr.c.ctx, req, &resp)
 	if err != nil {
 		return nil, err
 	}
@@ -122,7 +117,7 @@ func (b *Bucket) AppList(curs *Cursor) (*AppList, error) {
 // Authorization ..
 func (b *Bucket) Authorization() (*objects.Authorization, error) {
 
-	req := b.g.NewRequest(fmt.Sprintf(`
+	req := b.r.newRequest(fmt.Sprintf(`
                 query {
                         bucket(name: "%s") {
                                 authorization {
@@ -142,7 +137,7 @@ func (b *Bucket) Authorization() (*objects.Authorization, error) {
 	}
 
 	resp := new(responseContainer)
-	err := b.g.client.Run(b.g.ctx, req, &resp)
+	err := b.r.mgr.c.graphql.Run(b.r.mgr.c.ctx, req, &resp)
 	if err != nil {
 		return nil, err
 	}
@@ -153,7 +148,7 @@ func (b *Bucket) Authorization() (*objects.Authorization, error) {
 // Icon ..
 func (b *Bucket) Icon() (*objects.Fragment, error) {
 
-	req := b.g.NewRequest(fmt.Sprintf(`
+	req := b.r.newRequest(fmt.Sprintf(`
                 query {
                         bucket(name: "%s") {
                                 icon {
@@ -171,7 +166,7 @@ func (b *Bucket) Icon() (*objects.Fragment, error) {
 	}
 
 	resp := new(responseContainer)
-	err := b.g.client.Run(b.g.ctx, req, &resp)
+	err := b.r.mgr.c.graphql.Run(b.r.mgr.c.ctx, req, &resp)
 	if err != nil {
 		return nil, err
 	}
@@ -179,185 +174,161 @@ func (b *Bucket) Icon() (*objects.Fragment, error) {
 	return &resp.Bucket.Icon, nil
 }
 
-// GetBucket ..
-func (c *Client) GetBucket(name string) (*Bucket, error) {
+// Delete the bucket. This action is irreversible.
+func (b *Bucket) Delete() error {
 
-	req := c.NewRequest(fmt.Sprintf(`
-                query {
-                        bucket(name: "%s") {
-                                name
-                        }
+	req := b.r.newRequest(fmt.Sprintf(`
+                mutation {
+                        deleteBucket(name:"%s")
                 }
-        `, name))
+        `, b.Name()))
 
 	type responseContainer struct {
-		Bucket objects.Bucket `json:"bucket"`
+		DeleteBucket bool `json:"deleteBucket"`
 	}
 
 	resp := new(responseContainer)
-	err := c.client.Run(c.ctx, req, &resp)
-	if err != nil {
-		return nil, err
-	}
-
-	return &Bucket{
-		g:    c,
-		name: resp.Bucket.Name,
-	}, nil
+	err := b.r.mgr.c.graphql.Run(b.r.mgr.c.ctx, req, &resp)
+	return err
 }
 
-// ListBuckets ..
-func (c *Client) ListBuckets(curs *Cursor) (*BucketList, error) {
-
-	var vd, v string
-	if curs != nil {
-		vd, v = curs.Strings()
-	}
-
-	req := c.NewRequest(fmt.Sprintf(`
-                query%s {
-                        listBuckets%s {
-                                edges {
-                                        cursor
-                                        node {
-                                                name
-                                        }
-                                }
-                                pageInfo {
-                                        endCursor
-                                        startCursor
-                                        hasNextPage
-                                        hasPreviousPage
-                                }
-                        }
-                }
-        `, vd, v))
-	if curs != nil {
-		curs.AddToRequest(req)
-	}
-
-	type responseContainer struct {
-		ListBucket objects.BucketsConnection `json:"listBuckets"`
-	}
-
-	resp := new(responseContainer)
-	err := c.client.Run(c.ctx, req, &resp)
-	if err != nil {
-		return nil, err
-	}
-
-	out := new(BucketList)
-	out.PageInfo = resp.ListBucket.PageInfo
-	out.Items = make([]BucketListItem, 0)
-
-	for _, b := range resp.ListBucket.Edges {
-		out.Items = append(out.Items, BucketListItem{
-			Cursor: b.Cursor,
-			Bucket: Bucket{
-				g:    c,
-				name: b.Node.Name,
-			},
-		})
-	}
-
-	return out, nil
-}
-
-// ListBucketsSubscription ..
-func (c *Client) ListBucketsSubscription(dataCallback func([]string, []graphqlws.GQLError),
-	errCallback func(error)) (*graphqlws.Subscription, error) {
-
-	dc := func(payload *graphqlws.GQLDataPayload) {
-
-		if payload.Data == nil {
-			dataCallback(nil, payload.Errors)
-			return
-		}
-
-		type responseContainer struct {
-			Data struct {
-				ListBuckets objects.BucketsConnection `json:"listBuckets"`
-			} `json:"data"`
-		}
-
-		resp := new(responseContainer)
-		b, err := json.Marshal(payload)
-		if err != nil {
-			panic(err)
-		}
-
-		err = json.Unmarshal(b, resp)
-		if err != nil {
-			panic(err)
-		}
-
-		out := make([]string, 0)
-		for _, b := range resp.Data.ListBuckets.Edges {
-			out = append(out, b.Node.Name)
-		}
-
-		dataCallback(out, payload.Errors)
-	}
-
-	subscription, err := c.subscriptions.Subscription(&graphqlws.SubscriptionConfig{
-		Query: `
-			subscription {
-				listBuckets {
-					edges {
-						node {
-							name
-						}
-					}
-				}
-			}`,
-		DataCallback:  dc,
-		ErrorCallback: errCallback,
-	})
-	if err != nil {
-		return nil, err
-	}
-
-	return subscription, nil
-}
-
-// NewAppRequestArguments ..
-type NewAppRequestArguments struct {
-	Name string
-	Tag  string
-	File io.Reader
-}
-
-// NewApp..
-func (b *Bucket) NewApp(args *NewAppRequestArguments) error {
-
-	vars := fmt.Sprintf(`bucket:"%s", app:"%s"`, b.Name(), args.Name)
-	if args.Tag != "" {
-		vars = fmt.Sprintf(`(%s, tag:"%s")`, vars, args.Tag)
-	}
-
-	req := graphql.NewRequest(fmt.Sprintf(`
-		mutation {
-			newApp%s
-		}
-	`, vars))
-
-	type responseContainer struct {
-		NewApp string `json:"newApp"`
-	}
-
-	resp := new(responseContainer)
-	err := b.g.client.Run(b.g.ctx, req, &resp)
-	if err != nil {
-		return err
-	}
-
-	res, err := b.g.Post(resp.NewApp, "application/octet-stream", args.File)
-	if err != nil {
-		return err
-	}
-	if res.StatusCode != http.StatusOK {
-		return fmt.Errorf("failed to upload: %s", res.Status)
-	}
-
-	return nil
-}
+// // GetBucket ..
+// func (c *Client) GetBucket(name string) (*Bucket, error) {
+//
+// 	req := c.NewRequest(fmt.Sprintf(`
+//                 query {
+//                         bucket(name: "%s") {
+//                                 name
+//                         }
+//                 }
+//         `, name))
+//
+// 	type responseContainer struct {
+// 		Bucket objects.Bucket `json:"bucket"`
+// 	}
+//
+// 	resp := new(responseContainer)
+// 	err := c.client.Run(c.ctx, req, &resp)
+// 	if err != nil {
+// 		return nil, err
+// 	}
+//
+// 	return &Bucket{
+// 		g:    c,
+// 		name: resp.Bucket.Name,
+// 	}, nil
+// }
+//
+// // ListBuckets ..
+// func (c *Client) ListBuckets(curs *Cursor) (*BucketList, error) {
+//
+// 	var vd, v string
+// 	if curs != nil {
+// 		vd, v = curs.Strings()
+// 	}
+//
+// 	req := c.NewRequest(fmt.Sprintf(`
+//                 query%s {
+//                         listBuckets%s {
+//                                 edges {
+//                                         cursor
+//                                         node {
+//                                                 name
+//                                         }
+//                                 }
+//                                 pageInfo {
+//                                         endCursor
+//                                         startCursor
+//                                         hasNextPage
+//                                         hasPreviousPage
+//                                 }
+//                         }
+//                 }
+//         `, vd, v))
+// 	if curs != nil {
+// 		curs.AddToRequest(req)
+// 	}
+//
+// 	type responseContainer struct {
+// 		ListBucket objects.BucketsConnection `json:"listBuckets"`
+// 	}
+//
+// 	resp := new(responseContainer)
+// 	err := c.client.Run(c.ctx, req, &resp)
+// 	if err != nil {
+// 		return nil, err
+// 	}
+//
+// 	out := new(BucketList)
+// 	out.PageInfo = resp.ListBucket.PageInfo
+// 	out.Items = make([]BucketListItem, 0)
+//
+// 	for _, b := range resp.ListBucket.Edges {
+// 		out.Items = append(out.Items, BucketListItem{
+// 			Cursor: b.Cursor,
+// 			Bucket: Bucket{
+// 				g:    c,
+// 				name: b.Node.Name,
+// 			},
+// 		})
+// 	}
+//
+// 	return out, nil
+// }
+//
+// // ListBucketsSubscription ..
+// func (c *Client) ListBucketsSubscription(dataCallback func([]string, []graphqlws.GQLError),
+// 	errCallback func(error)) (*graphqlws.Subscription, error) {
+//
+// 	dc := func(payload *graphqlws.GQLDataPayload) {
+//
+// 		if payload.Data == nil {
+// 			dataCallback(nil, payload.Errors)
+// 			return
+// 		}
+//
+// 		type responseContainer struct {
+// 			Data struct {
+// 				ListBuckets objects.BucketsConnection `json:"listBuckets"`
+// 			} `json:"data"`
+// 		}
+//
+// 		resp := new(responseContainer)
+// 		b, err := json.Marshal(payload)
+// 		if err != nil {
+// 			panic(err)
+// 		}
+//
+// 		err = json.Unmarshal(b, resp)
+// 		if err != nil {
+// 			panic(err)
+// 		}
+//
+// 		out := make([]string, 0)
+// 		for _, b := range resp.Data.ListBuckets.Edges {
+// 			out = append(out, b.Node.Name)
+// 		}
+//
+// 		dataCallback(out, payload.Errors)
+// 	}
+//
+// 	subscription, err := c.subscriptions.Subscription(&graphqlws.SubscriptionConfig{
+// 		Query: `
+// 			subscription {
+// 				listBuckets {
+// 					edges {
+// 						node {
+// 							name
+// 						}
+// 					}
+// 				}
+// 			}`,
+// 		DataCallback:  dc,
+// 		ErrorCallback: errCallback,
+// 	})
+// 	if err != nil {
+// 		return nil, err
+// 	}
+//
+// 	return subscription, nil
+// }
