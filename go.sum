@@ -10,5 +10,3 @@ github.com/matryer/is v1.2.0 h1:92UTHpy8CDwaJ08GqLDzhhuixiBUUD1p3AU6PHddz4A=
 github.com/matryer/is v1.2.0/go.mod h1:2fLPjFQM9rhQ15aVEtbuwhJinnOqrmgXPNdZsdwlWXA=
 github.com/pkg/errors v0.8.1 h1:iURUrRGxPUNPdy5/HRSm+Yj6okJ6UtLINN0Q9M4+h3I=
 github.com/pkg/errors v0.8.1/go.mod h1:bwawxfHBFNV+L2hUp1rHADufV3IMtnDRdf1r5NINEl0=
-github.com/sisatech/goapi v0.0.0-20190522042105-46c655fe0b6a h1:65IGX8U8CGv6h1sVoIR6SbHm0rcU0Am2DN++a+OzUQI=
-github.com/sisatech/goapi v0.0.0-20190522042105-46c655fe0b6a/go.mod h1:Ehf9yLM2NGwPtZ+trRPzwrzSMpCk2vnfBkINHM3+jEM=

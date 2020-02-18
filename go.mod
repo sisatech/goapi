@@ -7,5 +7,6 @@ require (
 	github.com/gorilla/websocket v1.4.0
 	github.com/graphql-go/graphql v0.7.8
 	github.com/machinebox/graphql v0.2.3-0.20181106130121-3a9253180225
-	github.com/sisatech/goapi v0.0.0-20190522042105-46c655fe0b6a
+	github.com/matryer/is v1.2.0 // indirect
+	github.com/pkg/errors v0.8.1 // indirect
 )
