@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"strings"
 
-	"code.vorteil.io/vorteil/apis/goapi/pkg/graphqlws"
+	"github.com/sisatech/goapi/pkg/graphqlws"
 	"github.com/machinebox/graphql"
 )
 

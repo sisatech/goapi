@@ -8,7 +8,7 @@ import (
 	"strings"
 	"time"
 
-	"code.vorteil.io/vorteil/apis/goapi/pkg/objects"
+	"github.com/sisatech/goapi/pkg/objects"
 	"github.com/machinebox/graphql"
 )
 
