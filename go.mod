@@ -1,4 +1,4 @@
-module github.com/sisatech/goapi.git
+module github.com/sisatech/goapi
 
 go 1.12
 
