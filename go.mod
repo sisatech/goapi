@@ -1,4 +1,4 @@
-module code.vorteil.io/vorteil/apis/goapi.git
+module github.com/sisatech/goapi.git
 
 go 1.12
 
